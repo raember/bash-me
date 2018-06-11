@@ -1,0 +1,305 @@
+#!/bin/sh
+
+## Logging
+# http://www.cubicrace.com/2016/03/log-tracing-mechnism-for-shell-scripts.html
+
+log() {
+    logmsg="$(date '+%Y-%M-%d %H:%m:%S') $2 $3"
+    echo -e "\033[s$1$logmsg$font_reset\033[u\033[1B"
+    if [ -n "$log2file" ] && [ -n "$logfile" ]; then echo "$logmsg" >> $logfile; fi
+}
+trace() {
+    if [ "$loglevel" -gt "$ll_trace" ]; then return; fi
+    log "$fg_light_gray" "[TRACE]" "$1"
+}
+debug() {
+    if [ "$loglevel" -gt "$ll_debug" ]; then return; fi
+    log "$fg_light_gray" "[DEBUG]" "$1"
+}
+info() {
+    if [ "$loglevel" -gt "$ll_info" ]; then return; fi
+    log "$fg_default" "[INFO] " "$1"
+}
+warn() {
+    if [ "$loglevel" -gt "$ll_warn" ]; then return; fi
+    log "$fg_yellow" "[WARN] " "$1"
+}
+error() {
+    if [ "$loglevel" -gt "$ll_error" ]; then return; fi
+    log "$fg_light_red" "[ERROR]" "$1"
+}
+fatal() {
+    if [ "$loglevel" -gt "$ll_fatal" ]; then return; fi
+    log "$fg_red" "[FATAL]" "$1"
+}
+ll_trace=0
+ll_debug=1
+ll_info=2
+ll_warn=3
+ll_error=4
+ll_fatal=5
+ll_quiet=6
+loglevel="$ll_info"
+logfile="./$(basename "$0").log"
+log2file=
+
+
+## Exit codes
+exit_ok=0
+exit_err=1
+exit_missuse=2
+exit_cannotexec=126
+exit_cmdnotfound=127
+exit_invalarg=128
+exit_fatal_base=128
+exit_ctrlc=130
+exit_outofrng=255
+check_exit_code() {
+    trace "Checking exit code: $1"
+    return=$1
+    excode="exit code $return: "
+    if [ $return -gt 64 ] && [ $return -lt 114]; then
+        debug "${excode}Custom C/C++ return code according to /usr/include/sysexits.h detected."
+    fi
+    if [ $return -gt 128 ] && [ $return -lt 166]; then
+        debug "${excode}Custom fatal error exit code detected."
+    fi
+    case $return in
+        $exit_ok)
+            debug "${excode}Code exited normally."
+            ;;
+        $exit_err)
+            warn "${excode}Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
+            ;;
+        $exit_missuse)
+            warn "${excode}Misuse of shell builtins. Missing keyword or command or permission problem."
+            ;;
+        $exit_cannotexec)
+            warn "${excode}Command invoked cannot execute. Permission problem or command is not an executable."
+            ;;
+        $exit_cmdnotfound)
+            warn "${excode}Command not found. Possible problem with \$PATH or a typo."
+            ;;
+        $exit_invalarg)
+            warn "${excode}Invalid argument to exit. exit takes only integer args in the range 0 - 255."
+            ;;
+        $exit_ctrlc)
+            warn "${excode}Script terminated by Control-C."
+            ;;
+        $exit_outofrng)
+            warn "${excode}Exit status out of range. exit takes only integer args in the range 0 - 255."
+            ;;
+        ?)
+            err "Could not categorize exit code $return appropriately."
+    esac
+    return $return
+}
+
+## Colors and formatting
+fg_default="\033[39m"
+fg_black="\033[30m"
+fg_red="\033[31m"
+fg_green="\033[32m"
+fg_yellow="\033[33m"
+fg_blue="\033[34m"
+fg_magenta="\033[35m"
+fg_cyan="\033[36m"
+fg_light_gray="\033[37m"
+fg_dark_gray="\033[90m"
+fg_light_red="\033[91m"
+fg_light_green="\033[92m"
+fg_light_yellow="\033[93m"
+fg_light_blue="\033[94m"
+fg_light_magenta="\033[95m"
+fg_light_cyan="\033[96m"
+fg_white="\033[97m"
+
+bg_default="\033[49m"
+bg_black="\033[40m"
+bg_red="\033[41m"
+bg_green="\033[42m"
+bg_yellow="\033[43m"
+bg_blue="\033[44m"
+bg_magenta="\033[45m"
+bg_cyan="\033[46m"
+bg_light_gray="\033[47m"
+bg_dark_gray="\033[100m"
+bg_light_red="\033[101m"
+bg_light_green="\033[102m"
+bg_light_yellow="\033[103m"
+bg_light_blue="\033[104m"
+bg_light_magenta="\033[105m"
+bg_light_cyan="\033[106m"
+bg_white="\033[107m"
+
+fnt_bold="\033[1m"
+fnt_dim="\033[2m"
+fnt_italic="\033[3m"
+fnt_underline="\033[4m"
+fnt_blink="\033[5m"
+fnt_overline="\033[6m"
+fnt_reverse="\033[7m"
+fnt_hidden="\033[8m"
+fnt_strikeout="\033[9m"
+
+fnt_no_bold="\033[21m"
+fnt_no_dim="\033[22m"
+fnt_no_italic="\033[23m"
+fnt_no_underline="\033[24m"
+fnt_no_blink="\033[25m"
+fnt_no_overline="\033[6m"
+fnt_no_reverse="\033[27m"
+fnt_no_hidden="\033[28m"
+fnt_no_strikeout="\033[29m"
+
+fnt_reset="\033[0m"
+
+colors_16() {
+    #Background
+    for clbg in {40..47} {100..107} 49 ; do
+        #Foreground
+        for clfg in {30..37} {90..97} 39 ; do
+            #Formatting
+            for attr in 0 1 2 3 4 5 6 7 8 9 ; do
+                #Print the result
+                echo -en "\e[${attr};${clbg};${clfg}m ^[${attr};${clbg};${clfg}m \e[0m"
+            done
+            echo #Newline
+        done
+    done
+}
+
+## Trapping signals
+trap 'info "Exiting script. Cleaning up."; cleanup' EXIT
+cleanup() { return; }
+trap 'error "${0} (${LINENO}): Error recieved: \n$(check_exit_code $?)"; err $?' ERR
+err() { exit $1; }
+trap 'fatal "Hangup. The controlling terminal closed."; hup' HUP
+hup() { exit; }
+trap 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."; interrupt' INT
+interrupt() { exit; }
+trap 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."; quit' QUIT
+quit() { exit; }
+trap 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."; ill' ILL
+ill() { exit; }
+trap 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."; trapped' TRAP
+trapped() { exit; }
+trap 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."; aborted' ABRT
+abort() { exit; }
+trap 'error "Access to an undefined portion of a memory object."; bus' BUS
+bus() { exit; }
+trap 'error "Floating-point exception. Erroneous arithmetic operation."; fpe' FPE
+fpe() { exit; }
+trap 'info "USR1 received. User-defined condition."; usr1' USR1
+usr1() { exit; }
+trap 'info "USR2 received. User-defined condition."; usr2' USR2
+usr2() { exit; }
+trap 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."; segv' SEGV
+segv() { exit; }
+trap 'error "Process attempted to write to a pipe without a process connected to the other end."; pipe' PIPE
+pipe() { exit; }
+trap 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."; alarm' ALRM VTALRM PROF
+alarm() { exit; }
+trap 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."' TERM
+term() { exit; }
+trap 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."' STKFLT
+stackfault() { exit; }
+trap 'info "Child process terminated/interrupted/resumed."; child' CHLD
+child() { return; }
+trap 'info "Continuing execution."; cont' CONT
+cont() { return; }
+trap 'printf "\033[2D"; info "Stopping execution."; stop' STOP TSTP
+stop() { return; }
+trap 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyin' TTIN
+ttyin() { return; }
+trap 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyout' TTOU
+ttyout() { return; }
+trap 'info "A socket has urgent or out-of-band data available to read."; urgent' URG
+urgent() { return; }
+trap 'fatal "CPU time limit exceeded."; xcpu' XCPU
+xcpu() { exit; }
+trap 'fatal "File size limit exceeded."; xfsz' XFSZ
+xfsz() { exit; }
+trap 'info "Controlling terminal changed its size."; window_change' WINCH
+window_change() { return; }
+#trap 'info "An event occurred on an explicitly watched file descriptor."; poll' POLL
+#poll() { exit; }
+trap 'fatal "The system experiences a power failure."; power_fail' PWR
+power_fail() { return; }
+trap 'error "The process passed a bad argument to a system call."; syserror' SYS
+syserror() { exit; }
+trap 'trace "Received real-time signal MIN 0";  rtmin0'  RTMIN
+trap 'trace "Received real-time signal MIN 1";  rtmin1'  RTMIN+1
+trap 'trace "Received real-time signal MIN 2";  rtmin2'  RTMIN+2
+trap 'trace "Received real-time signal MIN 3";  rtmin3'  RTMIN+3
+trap 'trace "Received real-time signal MIN 4";  rtmin4'  RTMIN+4
+trap 'trace "Received real-time signal MIN 5";  rtmin5'  RTMIN+5
+trap 'trace "Received real-time signal MIN 6";  rtmin6'  RTMIN+6
+trap 'trace "Received real-time signal MIN 7";  rtmin7'  RTMIN+7
+trap 'trace "Received real-time signal MIN 8";  rtmin8'  RTMIN+8
+trap 'trace "Received real-time signal MIN 9";  rtmin9'  RTMIN+9
+trap 'trace "Received real-time signal MIN 10"; rtmin10' RTMIN+10
+trap 'trace "Received real-time signal MIN 11"; rtmin11' RTMIN+11
+trap 'trace "Received real-time signal MIN 12"; rtmin12' RTMIN+12
+trap 'trace "Received real-time signal MIN 13"; rtmin13' RTMIN+13
+trap 'trace "Received real-time signal MIN 14"; rtmin14' RTMIN+14
+trap 'trace "Received real-time signal MIN 15"; rtmin15' RTMIN+15
+trap 'trace "Received real-time signal MAX 0";  rtmax0'  RTMAX
+trap 'trace "Received real-time signal MAX 1";  rtmax1'  RTMAX-1
+trap 'trace "Received real-time signal MAX 2";  rtmax2'  RTMAX-2
+trap 'trace "Received real-time signal MAX 3";  rtmax3'  RTMAX-3
+trap 'trace "Received real-time signal MAX 4";  rtmax4'  RTMAX-4
+trap 'trace "Received real-time signal MAX 5";  rtmax5'  RTMAX-5
+trap 'trace "Received real-time signal MAX 6";  rtmax6'  RTMAX-6
+trap 'trace "Received real-time signal MAX 7";  rtmax7'  RTMAX-7
+trap 'trace "Received real-time signal MAX 8";  rtmax8'  RTMAX-8
+trap 'trace "Received real-time signal MAX 9";  rtmax9'  RTMAX-9
+trap 'trace "Received real-time signal MAX 10"; rtmax10' RTMAX-10
+trap 'trace "Received real-time signal MAX 11"; rtmax11' RTMAX-11
+trap 'trace "Received real-time signal MAX 12"; rtmax12' RTMAX-12
+trap 'trace "Received real-time signal MAX 13"; rtmax13' RTMAX-13
+trap 'trace "Received real-time signal MAX 14"; rtmax14' RTMAX-14
+rtmin0() { return; }
+rtmin1() { return; }
+rtmin2() { return; }
+rtmin3() { return; }
+rtmin4() { return; }
+rtmin5() { return; }
+rtmin6() { return; }
+rtmin7() { return; }
+rtmin8() { return; }
+rtmin9() { return; }
+rtmin10() { return; }
+rtmin11() { return; }
+rtmin12() { return; }
+rtmin13() { return; }
+rtmin14() { return; }
+rtmin15() { return; }
+rtmax0() { return; }
+rtmax1() { return; }
+rtmax2() { return; }
+rtmax3() { return; }
+rtmax4() { return; }
+rtmax5() { return; }
+rtmax6() { return; }
+rtmax7() { return; }
+rtmax8() { return; }
+rtmax9() { return; }
+rtmax10() { return; }
+rtmax11() { return; }
+rtmax12() { return; }
+rtmax13() { return; }
+rtmax14() { return; }
+rtmax15() { return; }
+
+
+loglevel="$ll_trace"
+log2file=y
+cond=true
+interrupt() { cond=false; }
+while $cond; do
+    echo "shhhht" > /dev/null
+done
+echo "Exited while loop"
+ls > /dev/null
+watch ls > /dev/null
