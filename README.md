@@ -75,6 +75,27 @@ To make formatting easier, here are some constants to use while formatting strin
 
 Keep in mind that to use those in an `echo` command, the `-e` flag is mandatory.
 
+## Option parsing
+To define an option to parse for, the variable `opts` can be set:
+```sh
+opts=<flags>
+```
+`flags`: The flags used by getopts to parse the arguments. For example:
+```sh
+opts="ol:hv"
+```
+for parsing flags like `-h -l file -o -v`.
+
+By default, the following options are predefined:
+* `h`: Show usage and help text.
+* `v`: Be verbose(loglevel 0).
+* `q`: Be quiet(no logs - overrides `v`).
+* `l:`: Loglevel(defaults to `2`(INFO)).
+* `o:`: Writes to logfile(defaults to `$(basename $0)` - argument optional).
+* `t`: Don't setup signal traps.
+
+The actual parsing of the arguments can be initiated via the `setup "$*"` method.
+
 ## Trapping signals
 The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html) and executes a corresponding command:
 | Signal | Default behaviour | Description | Command |

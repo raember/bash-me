@@ -9,27 +9,27 @@ log() {
     if [ -n "$log2file" ] && [ -n "$logfile" ]; then echo "$logmsg" >> $logfile; fi
 }
 trace() {
-    if [ "$loglevel" -gt "$ll_trace" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_trace" ]]; then return; fi
     log "$fg_light_gray" "[TRACE]" "$1"
 }
 debug() {
-    if [ "$loglevel" -gt "$ll_debug" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_debug" ]]; then return; fi
     log "$fg_light_gray" "[DEBUG]" "$1"
 }
 info() {
-    if [ "$loglevel" -gt "$ll_info" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_info" ]]; then return; fi
     log "$fg_default" "[INFO] " "$1"
 }
 warn() {
-    if [ "$loglevel" -gt "$ll_warn" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_warn" ]]; then return; fi
     log "$fg_yellow" "[WARN] " "$1"
 }
 error() {
-    if [ "$loglevel" -gt "$ll_error" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_error" ]]; then return; fi
     log "$fg_light_red" "[ERROR]" "$1"
 }
 fatal() {
-    if [ "$loglevel" -gt "$ll_fatal" ]; then return; fi
+    if [[ "$loglevel" -gt "$ll_fatal" ]]; then return; fi
     log "$fg_red" "[FATAL]" "$1"
 }
 ll_trace=0
@@ -169,137 +169,281 @@ colors_16() {
     done
 }
 
-## Trapping signals
-trap 'info "Exiting script. Cleaning up."; cleanup' EXIT
-cleanup() { return; }
-trap 'error "${0} (${LINENO}): Error recieved: \n$(check_exit_code $?)"; err $?' ERR
-err() { exit $1; }
-trap 'fatal "Hangup. The controlling terminal closed."; hup' HUP
-hup() { exit; }
-trap 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."; interrupt' INT
-interrupt() { exit; }
-trap 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."; quit' QUIT
-quit() { exit; }
-trap 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."; ill' ILL
-ill() { exit; }
-trap 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."; trapped' TRAP
-trapped() { exit; }
-trap 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."; aborted' ABRT
-abort() { exit; }
-trap 'error "Access to an undefined portion of a memory object."; bus' BUS
-bus() { exit; }
-trap 'error "Floating-point exception. Erroneous arithmetic operation."; fpe' FPE
-fpe() { exit; }
-trap 'info "USR1 received. User-defined condition."; usr1' USR1
-usr1() { exit; }
-trap 'info "USR2 received. User-defined condition."; usr2' USR2
-usr2() { exit; }
-trap 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."; segv' SEGV
-segv() { exit; }
-trap 'error "Process attempted to write to a pipe without a process connected to the other end."; pipe' PIPE
-pipe() { exit; }
-trap 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."; alarm' ALRM VTALRM PROF
-alarm() { exit; }
-trap 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."' TERM
-term() { exit; }
-trap 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."' STKFLT
-stackfault() { exit; }
-trap 'info "Child process terminated/interrupted/resumed."; child' CHLD
-child() { return; }
-trap 'info "Continuing execution."; cont' CONT
-cont() { return; }
-trap 'printf "\033[2D"; info "Stopping execution."; stop' STOP TSTP
-stop() { return; }
-trap 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyin' TTIN
-ttyin() { return; }
-trap 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyout' TTOU
-ttyout() { return; }
-trap 'info "A socket has urgent or out-of-band data available to read."; urgent' URG
-urgent() { return; }
-trap 'fatal "CPU time limit exceeded."; xcpu' XCPU
-xcpu() { exit; }
-trap 'fatal "File size limit exceeded."; xfsz' XFSZ
-xfsz() { exit; }
-trap 'info "Controlling terminal changed its size."; window_change' WINCH
-window_change() { return; }
-#trap 'info "An event occurred on an explicitly watched file descriptor."; poll' POLL
-#poll() { exit; }
-trap 'fatal "The system experiences a power failure."; power_fail' PWR
-power_fail() { return; }
-trap 'error "The process passed a bad argument to a system call."; syserror' SYS
-syserror() { exit; }
-trap 'trace "Received real-time signal MIN 0";  rtmin0'  RTMIN
-trap 'trace "Received real-time signal MIN 1";  rtmin1'  RTMIN+1
-trap 'trace "Received real-time signal MIN 2";  rtmin2'  RTMIN+2
-trap 'trace "Received real-time signal MIN 3";  rtmin3'  RTMIN+3
-trap 'trace "Received real-time signal MIN 4";  rtmin4'  RTMIN+4
-trap 'trace "Received real-time signal MIN 5";  rtmin5'  RTMIN+5
-trap 'trace "Received real-time signal MIN 6";  rtmin6'  RTMIN+6
-trap 'trace "Received real-time signal MIN 7";  rtmin7'  RTMIN+7
-trap 'trace "Received real-time signal MIN 8";  rtmin8'  RTMIN+8
-trap 'trace "Received real-time signal MIN 9";  rtmin9'  RTMIN+9
-trap 'trace "Received real-time signal MIN 10"; rtmin10' RTMIN+10
-trap 'trace "Received real-time signal MIN 11"; rtmin11' RTMIN+11
-trap 'trace "Received real-time signal MIN 12"; rtmin12' RTMIN+12
-trap 'trace "Received real-time signal MIN 13"; rtmin13' RTMIN+13
-trap 'trace "Received real-time signal MIN 14"; rtmin14' RTMIN+14
-trap 'trace "Received real-time signal MIN 15"; rtmin15' RTMIN+15
-trap 'trace "Received real-time signal MAX 0";  rtmax0'  RTMAX
-trap 'trace "Received real-time signal MAX 1";  rtmax1'  RTMAX-1
-trap 'trace "Received real-time signal MAX 2";  rtmax2'  RTMAX-2
-trap 'trace "Received real-time signal MAX 3";  rtmax3'  RTMAX-3
-trap 'trace "Received real-time signal MAX 4";  rtmax4'  RTMAX-4
-trap 'trace "Received real-time signal MAX 5";  rtmax5'  RTMAX-5
-trap 'trace "Received real-time signal MAX 6";  rtmax6'  RTMAX-6
-trap 'trace "Received real-time signal MAX 7";  rtmax7'  RTMAX-7
-trap 'trace "Received real-time signal MAX 8";  rtmax8'  RTMAX-8
-trap 'trace "Received real-time signal MAX 9";  rtmax9'  RTMAX-9
-trap 'trace "Received real-time signal MAX 10"; rtmax10' RTMAX-10
-trap 'trace "Received real-time signal MAX 11"; rtmax11' RTMAX-11
-trap 'trace "Received real-time signal MAX 12"; rtmax12' RTMAX-12
-trap 'trace "Received real-time signal MAX 13"; rtmax13' RTMAX-13
-trap 'trace "Received real-time signal MAX 14"; rtmax14' RTMAX-14
-rtmin0() { return; }
-rtmin1() { return; }
-rtmin2() { return; }
-rtmin3() { return; }
-rtmin4() { return; }
-rtmin5() { return; }
-rtmin6() { return; }
-rtmin7() { return; }
-rtmin8() { return; }
-rtmin9() { return; }
-rtmin10() { return; }
-rtmin11() { return; }
-rtmin12() { return; }
-rtmin13() { return; }
-rtmin14() { return; }
-rtmin15() { return; }
-rtmax0() { return; }
-rtmax1() { return; }
-rtmax2() { return; }
-rtmax3() { return; }
-rtmax4() { return; }
-rtmax5() { return; }
-rtmax6() { return; }
-rtmax7() { return; }
-rtmax8() { return; }
-rtmax9() { return; }
-rtmax10() { return; }
-rtmax11() { return; }
-rtmax12() { return; }
-rtmax13() { return; }
-rtmax14() { return; }
-rtmax15() { return; }
 
+## Option parsing
+opts_default="hvql:o:t"
+opts="$opts_default"
+parse_opts() {
+    debug "Parsing options using: '$opts'"
+    if [[ $opts =~ $opts_default.* ]]; then
+        debug "Old options preserved"
+        opts_new="${opts:${#opts_default}:99}"
+        if [ ! "$opts_new" == "" ]; then
+            debug "New options: '$opts_new'"
+        fi
+        while getopts "$opts" opt; do
+            case $opt in
+            # h)
+            #     debug "Showing help page"
+            #     help;;
+            # v)
+            #     loglevel="$ll_trace";;
+            # q)
+            #     loglevel="$ll_quiet";;
+            # l)
+            #     loglevel="$OPTARG";;
+            h|v|q|l|t|o);;
+            # o)
+            #     debug "Writing log to log file."
+            #     log2file=true
+            #     if [ ! "$OPTARG" == "" ]; then
+            #         logfile="$OPTARG"
+            #         debug "Writing log to log file: \"$logfile\"."
+            #     fi
+            #     ;;
+            # t) # Actually redundant because fix below
+            #     trapping=no;;
+            *)
+                debug "Checking option '$opt'"
+                if [[ $opts_new =~ $opt ]]; then # Option specified
+                    eval "$opt=1"
+                    if [[ $opts_new =~ $opt: ]]; then # Argument provided
+                        opt_name=$opt
+                        echo "${OPTARG}"
+                        eval "$opt="${OPTARG}""
+                        eval "${opt}_arg="${OPTARG}""
+                        debug "Found option '$opt_name=$opt'."
+                    else
+                        debug "Found option '$opt'."
+                    fi
+                else
+                    debug "Couldn't find '$opt' in '$opts_new'."
+                    print_help
+                    exit $exit_missuse
+                fi
+                ;;
+            esac
+        done
+        shift $((OPTIND-1))
+        debug "Done parsing arguments."
+    else
+        debug "Old options overridden."
+    fi
+}
+print_help() {
+    echo -n "Usage: "
+    for syn in "${syntax[@]}"; do
+        echo "$(basename $0) $syn"
+        echo -n "       "
+    done
+    echo -en "\033[7D"
+    echo "$usage"
+    echo
+    for option in "${optArray[@]}"; do
+        get_opt "$option"
+        if [ ! "$short" == "" ]; then
+            echo -n "  -$short"
+            if [ ! "$long" == "" ]; then
+                echo -n ","
+            else
+                echo -n " "
+            fi
+        else
+            echo -en "     "
+        fi
+        if [ ! "$long" == "" ]; then
+            line=" --$long"
+            if [ ! "$argument" == "" ]; then
+                line="$line $argument"
+            fi
+            let "len = $maxlen - ${#line} + 1"
+            echo -en "$line "
+            printf " %.0s" {1..$len}
+        else
+            printf " %.0s" {1..$maxlen}
+        fi
+        echo -e "$descr"
+    done
+}
+setup() {
+    if [[ $opts =~ $opts_default.* ]]; then
+        # Parsing options early
+        if test_option "$*" "h"; then 
+            print_help
+            exit $exit_ok
+        fi
+        if test_option "$*" "l\ *([0-9]*)"; then
+            loglevel=${BASH_REMATCH[1]}
+            if test_option "$*" "o\ +([/a-zA-Z0-9\.]+)"; then
+                logfile=${BASH_REMATCH[1]}
+                log2file=1
+            fi
+            debug "Set log level to $loglevel"
+            [ -n "$log2file" ] && debug "Set log file to '$logfile'."
+        fi
+        if test_option "$*" "t"; then
+            trapping=no
+            debug "Disabled signal trapping."
+        fi
+        if test_option "$*" "v"; then
+            loglevel="$ll_trace"
+            debug "Set log level to $loglevel."
+        fi
+        if test_option "$*" "q"; then
+            loglevel="$ll_quiet"
+            debug "Set log level to $loglevel."
+        fi
 
-loglevel="$ll_trace"
-log2file=y
-cond=true
-interrupt() { cond=false; }
-while $cond; do
-    echo "shhhht" > /dev/null
-done
-echo "Exited while loop"
-ls > /dev/null
-watch ls > /dev/null
+        ## Trapping signals
+        if [ -z "$trapping" ]; then
+            debug "Trapping signals."
+            trap 'info "Exiting script. Cleaning up."; cleanup' EXIT
+            cleanup() { return; }
+            trap 'error "${0} (${LINENO}): Error recieved: \n$(check_exit_code $?)"; err $?' ERR
+            err() { exit $1; }
+            trap 'fatal "Hangup. The controlling terminal closed."; hup' HUP
+            hup() { exit; }
+            trap 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."; interrupt' INT
+            interrupt() { exit; }
+            trap 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."; quit' QUIT
+            quit() { exit; }
+            trap 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."; ill' ILL
+            ill() { exit; }
+            trap 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."; trapped' TRAP
+            trapped() { exit; }
+            trap 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."; aborted' ABRT
+            abort() { exit; }
+            trap 'error "Access to an undefined portion of a memory object."; bus' BUS
+            bus() { exit; }
+            trap 'error "Floating-point exception. Erroneous arithmetic operation."; fpe' FPE
+            fpe() { exit; }
+            trap 'info "USR1 received. User-defined condition."; usr1' USR1
+            usr1() { exit; }
+            trap 'info "USR2 received. User-defined condition."; usr2' USR2
+            usr2() { exit; }
+            trap 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."; segv' SEGV
+            segv() { exit; }
+            trap 'error "Process attempted to write to a pipe without a process connected to the other end."; pipe' PIPE
+            pipe() { exit; }
+            trap 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."; alarm' ALRM VTALRM PROF
+            alarm() { exit; }
+            trap 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."' TERM
+            term() { exit; }
+            #trap 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."' STKFLT
+            #stackfault() { exit; }
+            trap 'info "Child process terminated/interrupted/resumed."; child' CHLD
+            child() { return; }
+            trap 'info "Continuing execution."; cont' CONT
+            cont() { return; }
+            trap 'printf "\033[2D"; info "Stopping execution."; stop' STOP TSTP
+            stop() { return; }
+            trap 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyin' TTIN
+            ttyin() { return; }
+            trap 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."; ttyout' TTOU
+            ttyout() { return; }
+            trap 'info "A socket has urgent or out-of-band data available to read."; urgent' URG
+            urgent() { return; }
+            trap 'fatal "CPU time limit exceeded."; xcpu' XCPU
+            xcpu() { exit; }
+            trap 'fatal "File size limit exceeded."; xfsz' XFSZ
+            xfsz() { exit; }
+            trap 'info "Controlling terminal changed its size."; window_change' WINCH
+            window_change() { return; }
+            # trap 'info "An event occurred on an explicitly watched file descriptor."; poll' POLL
+            # poll() { exit; }
+            trap 'fatal "The system experiences a power failure."; power_fail' PWR
+            power_fail() { return; }
+            trap 'error "The process passed a bad argument to a system call."; syserror' SYS
+            syserror() { exit; }
+            trap 'trace "Received real-time signal MIN 0";  rtmin0'  RTMIN
+            trap 'trace "Received real-time signal MIN 1";  rtmin1'  RTMIN+1
+            trap 'trace "Received real-time signal MIN 2";  rtmin2'  RTMIN+2
+            trap 'trace "Received real-time signal MIN 3";  rtmin3'  RTMIN+3
+            trap 'trace "Received real-time signal MIN 4";  rtmin4'  RTMIN+4
+            trap 'trace "Received real-time signal MIN 5";  rtmin5'  RTMIN+5
+            trap 'trace "Received real-time signal MIN 6";  rtmin6'  RTMIN+6
+            trap 'trace "Received real-time signal MIN 7";  rtmin7'  RTMIN+7
+            trap 'trace "Received real-time signal MIN 8";  rtmin8'  RTMIN+8
+            trap 'trace "Received real-time signal MIN 9";  rtmin9'  RTMIN+9
+            trap 'trace "Received real-time signal MIN 10"; rtmin10' RTMIN+10
+            trap 'trace "Received real-time signal MIN 11"; rtmin11' RTMIN+11
+            trap 'trace "Received real-time signal MIN 12"; rtmin12' RTMIN+12
+            trap 'trace "Received real-time signal MIN 13"; rtmin13' RTMIN+13
+            trap 'trace "Received real-time signal MIN 14"; rtmin14' RTMIN+14
+            trap 'trace "Received real-time signal MIN 15"; rtmin15' RTMIN+15
+            trap 'trace "Received real-time signal MAX 0";  rtmax0'  RTMAX
+            trap 'trace "Received real-time signal MAX 1";  rtmax1'  RTMAX-1
+            trap 'trace "Received real-time signal MAX 2";  rtmax2'  RTMAX-2
+            trap 'trace "Received real-time signal MAX 3";  rtmax3'  RTMAX-3
+            trap 'trace "Received real-time signal MAX 4";  rtmax4'  RTMAX-4
+            trap 'trace "Received real-time signal MAX 5";  rtmax5'  RTMAX-5
+            trap 'trace "Received real-time signal MAX 6";  rtmax6'  RTMAX-6
+            trap 'trace "Received real-time signal MAX 7";  rtmax7'  RTMAX-7
+            trap 'trace "Received real-time signal MAX 8";  rtmax8'  RTMAX-8
+            trap 'trace "Received real-time signal MAX 9";  rtmax9'  RTMAX-9
+            trap 'trace "Received real-time signal MAX 10"; rtmax10' RTMAX-10
+            trap 'trace "Received real-time signal MAX 11"; rtmax11' RTMAX-11
+            trap 'trace "Received real-time signal MAX 12"; rtmax12' RTMAX-12
+            trap 'trace "Received real-time signal MAX 13"; rtmax13' RTMAX-13
+            trap 'trace "Received real-time signal MAX 14"; rtmax14' RTMAX-14
+            rtmin0() { return; }
+            rtmin1() { return; }
+            rtmin2() { return; }
+            rtmin3() { return; }
+            rtmin4() { return; }
+            rtmin5() { return; }
+            rtmin6() { return; }
+            rtmin7() { return; }
+            rtmin8() { return; }
+            rtmin9() { return; }
+            rtmin10() { return; }
+            rtmin11() { return; }
+            rtmin12() { return; }
+            rtmin13() { return; }
+            rtmin14() { return; }
+            rtmin15() { return; }
+            rtmax0() { return; }
+            rtmax1() { return; }
+            rtmax2() { return; }
+            rtmax3() { return; }
+            rtmax4() { return; }
+            rtmax5() { return; }
+            rtmax6() { return; }
+            rtmax7() { return; }
+            rtmax8() { return; }
+            rtmax9() { return; }
+            rtmax10() { return; }
+            rtmax11() { return; }
+            rtmax12() { return; }
+            rtmax13() { return; }
+            rtmax14() { return; }
+            rtmax15() { return; }
+        fi
+    fi
+    parse_opts $*
+}
+test_option() {
+    [[ \ $1 =~  \ -[a-zA-Z0-9]*$2 ]] && return 0;
+    return 1;
+}
+
+# Preamble
+opts="${opts}a:"
+syntax=(
+    "[OPTION]..."
+    "[OPTION]... [FILE]"
+)
+usage="Remove (unlink) the FILE(s)."
+
+# Setup
+setup $*
+
+# Code
+
+echo "a = $a"
+read
+setterm -term linux -back green -fore black -clear
+read
+# while true; do
+#     ls &> /dev/null
+# done
