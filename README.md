@@ -97,50 +97,80 @@ By default, the following options are predefined:
 The actual parsing of the arguments can be initiated via the `setup "$*"` method.
 
 ## Trapping signals
-The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html) and executes a corresponding command:
+The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html):
 | Signal | Default behaviour | Description | Command |
 | --- | --- | --- | --- |
-| EXIT | Terminate | Exit script. | `cleanup` |
-| ERR | Terminate | Error occurred. | `err` |
+| EXIT | Terminate | Exit script. | `sig_exit` |
+| ERR | Terminate | Error occurred. | `sig_err` |
 | DEBUG | Ignore | Debug cmd before every statement. | * |
-| SIGHUP | Terminate | Hangup. | `hup` |
-| SIGINT | Terminate | Terminal interrupt signal(Ctrl+C). | `interrupt` |
-| SIGQUIT | Terminate (core dump) | Terminal quit signal(Ctrl+\\). | `quit` |
-| SIGILL | Terminate (core dump) | Illegal instruction. | `ill` |
-| SIGTRAP | Terminate (core dump) | Trace/breakpoint trap. | `trapped` |
-| SIGABRT | Terminate (core dump) | Process abort signal. | `abort` |
-| SIGBUS | Terminate (core dump) | Access to an undefined portion of a memory object. | `bus` |
-| SIGFPE | Terminate (core dump) | Erroneous arithmetic operation. | `fpe` |
-| SIGKILL | Terminate | Kill (cannot be caught or ignored). |  |
-| SIGUSR1 | Terminate | User-defined signal 1. | `usr1` |
-| SIGUSR2 | Terminate | User-defined signal 2. | `usr2` |
-| SIGSEGV | Terminate (core dump) | Invalid memory reference. | `segv` |
-| SIGPIPE | Terminate | Write on a pipe with no one to read it. | `pipe` |
-| SIGALRM, SIGVTALRM, SIGPROF | Terminate | Alarm clock. | `alarm` |
-| SIGTERM | Terminate | Termination signal. | `term` |
-| SIGSTKFLT | Terminate | Stack fault. | `stackfault` |
-| SIGCHLD | Ignore | Child process terminated/interrupted/resumed. | `child` |
-| SIGCONT | Continue | Continue executing, if stopped. | `cont` |
-| SIGSTOP, SIGTSTP | Stop | Terminal stop signal(Ctrl+Z). | `stop` |
-| SIGTTIN | Stop | Background process attempting read. | `ttyin` |
-| SIGTTOU | Stop | Background process attempting write. | `ttyout` |
-| SIGURG | Ignore | High bandwidth data is available at a socket. | `urgent` |
-| SIGXCPU | Terminate (core dump) | CPU time limit exceeded. | `xcpu` |
-| SIGXFSZ | Terminate (core dump) | File size limit exceeded. | `xfsz` |
-| SIGWINCH | Ignore | Window change. | `window_change` |
-| SIGPOLL | Terminate | Pollable event. |  |
-| SIGPWR | Ignore | Power failure. | `power_fail` |
-| SIGSYS | Terminate (core dump) | Bad system call. | `syserror` |
-| SIGRTMIN+n | Ignore | Real-time signal. n = {0..15} | `rtmin{0..15}` |
-| SIGRTMAX-n | Ignore | Real-time signal. n = {0..14} | `rtmax{0..14}` |
+| RETURN | Ignore | After a function or a script got sourced. | `sig_return` |
+| SIGHUP | Terminate | Hangup. | `sig_hup` |
+| SIGINT | Terminate | Terminal interrupt signal(Ctrl+C). | `sig_int` |
+| SIGQUIT | Terminate (core dump) | Terminal quit signal(Ctrl+\\). | `sig_quit` |
+| SIGILL | Terminate (core dump) | Illegal instruction. | `sig_ill` |
+| SIGTRAP | Terminate (core dump) | Trace/breakpoint trap. | `sig_trap` |
+| SIGABRT | Terminate (core dump) | Process abort signal. | `sig_abrt` |
+| SIGBUS | Terminate (core dump) | Access to an undefined portion of a memory object. | `sig_bus` |
+| SIGFPE | Terminate (core dump) | Erroneous arithmetic operation. | `sig_fpe` |
+| ~~SIGKILL~~ | Terminate | Kill (cannot be caught or ignored). | ~~`sig_kill`~~ |
+| SIGUSR1 | Terminate | User-defined signal 1. | `sig_usr1` |
+| SIGUSR2 | Terminate | User-defined signal 2. | `sig_usr2` |
+| SIGSEGV | Terminate (core dump) | Invalid memory reference. | `sig_segv` |
+| SIGPIPE | Terminate | Write on a pipe with no one to read it. | `sig_pipe` |
+| SIGALRM, SIGVTALRM, SIGPROF | Terminate | Alarm clock. | `sig_alrm` |
+| SIGTERM | Terminate | Termination signal. | `sig_term` |
+| SIGSTKFLT | Terminate | Stack fault. | `sig_stkflt` |
+| SIGCHLD | Ignore | Child process terminated/interrupted/resumed. | `sig_chld` |
+| SIGCONT | Continue | Continue executing, if stopped. | `sig_cont` |
+| SIGSTOP, SIGTSTP | Stop | Terminal stop signal(Ctrl+Z). | `sig_stop` |
+| SIGTTIN | Stop | Background process attempting read. | `sig_ttin` |
+| SIGTTOU | Stop | Background process attempting write. | `sig_ttou` |
+| SIGURG | Ignore | High bandwidth data is available at a socket. | `sig_urg` |
+| SIGXCPU | Terminate (core dump) | CPU time limit exceeded. | `sig_xcpu` |
+| SIGXFSZ | Terminate (core dump) | File size limit exceeded. | `sig_xfsz` |
+| SIGWINCH | Ignore | Window change. | `sig_winch` |
+| SIGPOLL | Terminate | Pollable event. | `sig_poll` |
+| SIGPWR | Ignore | Power failure. | `sig_pwr` |
+| SIGSYS | Terminate (core dump) | Bad system call. | `sig_sys` |
+| SIGRTMIN+n | Ignore | Real-time signal. n = {0..15} | `sig_rtmin_{0..15}` |
+| SIGRTMAX-n | Ignore | Real-time signal. n = {0..14} | `sig_rtmax_{0..14}` |
 
 For a better insight on their meaning, the [wiki](https://en.wikipedia.org/wiki/Signal_(IPC)) is quite helpful with that.
 
 *= To use the DEBUG-pseudo-signal, one has to setup the trap by oneself. Example:
 ```sh
-trap 'debug_pre ${LINENO}' DEBUG
-debug_pre() {
-    debug "debugging ($1)."
+sig_debug() {
+    local -i row="$((${BASH_LINENO[0]} - 3))"
+    local text=$(sed "${row}q;d" "$(basename $0)")
+    debug "$row: $text"
     read;
 }
+trap_sig DEBUG ''
+```
+This displays the the row number and the code on that row which is about to be executed after hitting `[ENTER]`.
+
+To trap those ferocious beasts, edit the `traps` array:
+```sh
+# Default traps:
+traps=(
+  ERR
+  EXIT
+  INT
+)
+
+# In your script, either delete
+traps=()
+# Recreate
+traps=(
+    USR1
+    USR2
+)
+# Or add new traps:
+traps+=(ERR)
+```
+Keep in mind that trapped signals require a callback function to be defined according to the table above.
+
+To release a trapped signal back into the wilderness, call the `trap_sig` function with the signal to be released and a `"-"` as callback function. For example to release a previously trapped signal, execute:
+```sh
+trap_sig INT '-'
 ```

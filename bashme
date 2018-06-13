@@ -1,4 +1,5 @@
-#!/bin/bash -   
+#!/bin/bash -
+#==============================================================================
 #title          :bashme.sh
 #description    :A bash template which manages vital mechanisms for bash
 #                scripting.
@@ -8,12 +9,28 @@
 #usage          :./bashme.sh
 #notes          :
 #bash_version   :4.4.12(1)-release
-#============================================================================
+#==============================================================================
 
-#######################################
-#               LOGGING               #
-#######################################
-#######################################
+
+
+###############################################################################
+#                                  LOGGING                                    #
+###############################################################################
+# Constants
+declare -ri LL_TRACE=0
+declare -ri LL_DEBUG=1
+declare -ri LL_INFO=2
+declare -ri LL_WARN=3
+declare -ri LL_ERROR=4
+declare -ri LL_FATAL=5
+declare -ri LL_QUIET=6
+
+# Variables
+declare -i loglevel=$LL_INFO
+declare logfile="./$(command -p basename "$0").log"
+declare log2file=''
+
+##
 # Logs a message according to its log level.
 # Globals:
 #   BASH_LINENO
@@ -30,21 +47,22 @@
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function log() {
-    local index=${BASH_LINENO[$((${#BASH_LINENO} - 1))]}
-    local IFS="-"
-    local func=${FUNCNAME[2]}
-    local logmsg="$(command -p date '+%Y-%M-%d %H:%m:%S') $3($BASH_SOURCE:$index) $func(): $4"
-    if (( $2 >= $LL_ERROR )); then
-        command -p echo -e "\033[s$1$logmsg$fnt_reset\033[u\033[1B" >&2
-    else
-        command -p echo -e "\033[s$1$logmsg$fnt_reset\033[u\033[1B"
-    fi
-    [ -n "$log2file" ] && echo "$logmsg" >> $logfile
-    return $EX_OK
+  local index="${BASH_LINENO[$((${#BASH_LINENO} - 1))]}"
+  local IFS='-'
+  local location=" ${FUNCNAME[2]}(): "
+  local logmsg="$(command -p date '+%Y-%M-%d %H:%m:%S') $3($lineno)$location$4"
+  if (( $2 >= $LL_ERROR )); then
+    command -p echo -e "\033[s$1$logmsg$fnt_reset\033[u\033[1B" >&2
+  else
+    command -p echo -e "\033[s$1$logmsg$fnt_reset\033[u\033[1B"
+  fi
+  [[ -n "$log2file" ]] && echo "$logmsg" >> $logfile
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the trace level.
 # Globals:
 #   LL_TRACE
@@ -54,13 +72,14 @@ function log() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function trace() {
-    [[ "$loglevel" -gt "$LL_TRACE" ]] && return $EX_OK
-    log "$fg_light_gray" "$LL_TRACE" "[TRACE]" "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_TRACE ]] && return $EX_OK
+  log "$fg_light_gray" $LL_TRACE '[TRACE]' "$1"
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the debug level.
 # Globals:
 #   LL_DEBUG
@@ -70,13 +89,14 @@ function trace() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function debug() {
-    [[ "$loglevel" -gt "$LL_DEBUG" ]] && return $EX_OK
-    log "$fg_light_gray" "$LL_DEBUG" "[DEBUG]" "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
+  log "$fg_light_gray" $LL_DEBUG '[DEBUG]' "$1"
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the info level.
 # Globals:
 #   LL_INFO
@@ -86,13 +106,14 @@ function debug() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function info() {
-    [[ "$loglevel" -gt "$LL_INFO" ]] && return $EX_OK
-    log "$fg_default" "$LL_INFO" "[INFO] " "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
+  log "$fg_default" $LL_INFO '[INFO] ' "$1"
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the warn level.
 # Globals:
 #   LL_WARN
@@ -102,13 +123,14 @@ function info() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function warn() {
-    [[ "$loglevel" -gt "$LL_WARN" ]] && return $EX_OK
-    log "$fg_yellow" "$LL_WARN" "[WARN] " "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_WARN ]] && return $EX_OK
+  log "$fg_yellow" $LL_WARN '[WARN] ' "$1"
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the error level.
 # Globals:
 #   LL_ERROR
@@ -118,13 +140,14 @@ function warn() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function error() {
-    [[ "$loglevel" -gt "$LL_ERROR" ]] && return $EX_OK
-    log "$fg_light_red" "$LL_ERROR" "[ERROR]" "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_ERROR ]] && return $EX_OK
+  log "$fg_light_red" $LL_ERROR '[ERROR]' "$1"
+  return $EX_OK
 }
-#######################################
+
+##
 # Logs a message on the fatal level.
 # Globals:
 #   LL_FATAL
@@ -134,157 +157,145 @@ function error() {
 #   Log message
 # Returns:
 #   None
-#######################################
+#
 function fatal() {
-    [[ "$loglevel" -gt "$LL_FATAL" ]] && return $EX_OK
-    log "$fg_red" "$LL_FATAL" "[FATAL]" "$1"
-    return $EX_OK
+  [[ $loglevel -gt $LL_FATAL ]] && return $EX_OK
+  log "$fg_red" $LL_FATAL '[FATAL]' "$1"
+  return $EX_OK
 }
 
+
+
+###############################################################################
+#                                RETURN VALUE                                 #
+###############################################################################
 # Constants
-LL_TRACE=0
-LL_DEBUG=1
-LL_INFO=2
-LL_WARN=3
-LL_ERROR=4
-LL_FATAL=5
-LL_QUIET=6
+declare -ri EX_OK=0
+declare -ri EX_ERR=1
+declare -ri EX_MISSUSE=2
+declare -ri EX_CANNOTEXEC=126
+declare -ri EX_CMDNOTFOUND=127
+declare -ri EX_INVALARG=128
+declare -ri EX_FATAL_BASE=128
+declare -ri EX_INT=130
+declare -ri EX_OUTOFRANGE=255
 
-# Variables
-loglevel="$LL_INFO"
-logfile="./$(command -p basename "$0").log"
-log2file=
-
-
-
-#######################################
-#              EXIT CODES             #
-#######################################
-#######################################
-# Checks the last exit code and writes logs.
+##
+# Checks the last return value and writes logs.
 # Globals:
 #   None
 # Arguments:
-#   Last exit code ($?)
+#   Last return value ($?)
 # Returns:
-#   Last exit code ($?)
-#######################################
-function check_exit_code() {
-    trace "Checking exit code: $1"
-    local retval=$1
-    local excode="exit code $retval: "
-    if [ $retval -gt 64 ] && [ $retval -lt 114]; then
-        debug "${excode}Custom C/C++ return code according to /usr/include/sysexits.h detected."
-    fi
-    if [ $retval -gt 128 ] && [ $retval -lt 166]; then
-        debug "${excode}Custom fatal error exit code detected."
-    fi
-    case $retval in
-        $EX_OK)
-            debug "${excode}Code exited normally."
-            ;;
-        $EX_ERR)
-            debug "${excode}Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
-            ;;
-        $EX_MISSUSE)
-            debug "${excode}Misuse of shell builtins. Missing keyword or command or permission problem."
-            ;;
-        $EX_CANNOTEXEC)
-            debug "${excode}Command invoked cannot execute. Permission problem or command is not an executable."
-            ;;
-        $EX_CMDNOTFOUND)
-            debug "${excode}Command not found. Possible problem with \$PATH or a typo."
-            ;;
-        $EX_INVALARG)
-            debug "${excode}Invalid argument to exit. exit takes only integer args in the range 0 - 255."
-            ;;
-        $EX_INT)
-            debug "${excode}Script terminated by Control-C."
-            ;;
-        $EX_OUTOFRANGE)
-            debug "${excode}Exit status out of range. exit takes only integer args in the range 0 - 255."
-            ;;
-        ?)
-            warn "Could not categorize exit code $retval appropriately."
-    esac
-    return $retval
+#   Last return value ($?)
+#
+function check_retval() {
+  trace "Checking return value: $1"
+  local retval="$1"
+  local excode="return value $retval: "
+  if [[ $retval -gt 64 ]] && [[ $retval -lt 114 ]]; then
+    debug "${excode}Custom C/C++ return code according to /usr/include/sysexits.h detected."
+  fi
+  if [[ $retval -gt 128 ]] && [[ $retval -lt 166 ]]; then
+    debug "${excode}Custom fatal return value detected."
+  fi
+  case $retval in
+    $EX_OK)
+      debug "${excode}Code exited normally."
+      ;;
+    $EX_ERR)
+      debug "${excode}Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
+      ;;
+    $EX_MISSUSE)
+      debug "${excode}Misuse of shell builtins. Missing keyword or command or permission problem."
+      ;;
+    $EX_CANNOTEXEC)
+      debug "${excode}Command invoked cannot execute. Permission problem or command is not an executable."
+      ;;
+    $EX_CMDNOTFOUND)
+      debug "${excode}Command not found. Possible problem with \$PATH or a typo."
+      ;;
+    $EX_INVALARG)
+      debug "${excode}Invalid argument to exit. exit takes only integer args in the range 0 - 255."
+      ;;
+    $EX_INT)
+      debug "${excode}Script terminated by Control-C."
+      ;;
+    $EX_OUTOFRANGE)
+      debug "${excode}Exit status out of range. exit takes only integer args in the range 0 - 255."
+      ;;
+    ?)
+      warn "Could not categorize return value $retval appropriately."
+  esac
+  return $retval
 }
 
+
+
+
+###############################################################################
+#                            COLORS AND FORMATTING                            #
+###############################################################################
 # Constants
-EX_OK=0
-EX_ERR=1
-EX_MISSUSE=2
-EX_CANNOTEXEC=126
-EX_CMDNOTFOUND=127
-EX_INVALARG=128
-EX_FATAL_BASE=128
-EX_INT=130
-EX_OUTOFRANGE=255
+readonly fg_default='\033[39m'
+readonly fg_black='\033[30m'
+readonly fg_red='\033[31m'
+readonly fg_green='\033[32m'
+readonly fg_yellow='\033[33m'
+readonly fg_blue='\033[34m'
+readonly fg_magenta='\033[35m'
+readonly fg_cyan='\033[36m'
+readonly fg_light_gray='\033[37m'
+readonly fg_dark_gray='\033[90m'
+readonly fg_light_red='\033[91m'
+readonly fg_light_green='\033[92m'
+readonly fg_light_yellow='\033[93m'
+readonly fg_light_blue='\033[94m'
+readonly fg_light_magenta='\033[95m'
+readonly fg_light_cyan='\033[96m'
+readonly fg_white='\033[97m'
 
+readonly bg_default='\033[49m'
+readonly bg_black='\033[40m'
+readonly bg_red='\033[41m'
+readonly bg_green='\033[42m'
+readonly bg_yellow='\033[43m'
+readonly bg_blue='\033[44m'
+readonly bg_magenta='\033[45m'
+readonly bg_cyan='\033[46m'
+readonly bg_light_gray='\033[47m'
+readonly bg_dark_gray='\033[100m'
+readonly bg_light_red='\033[101m'
+readonly bg_light_green='\033[102m'
+readonly bg_light_yellow='\033[103m'
+readonly bg_light_blue='\033[104m'
+readonly bg_light_magenta='\033[105m'
+readonly bg_light_cyan='\033[106m'
+readonly bg_white='\033[107m'
 
+readonly fnt_bold='\033[1m'
+readonly fnt_dim='\033[2m'
+readonly fnt_italic='\033[3m'
+readonly fnt_underline='\033[4m'
+readonly fnt_blink='\033[5m'
+readonly fnt_overline='\033[6m'
+readonly fnt_reverse='\033[7m'
+readonly fnt_hidden='\033[8m'
+readonly fnt_strikeout='\033[9m'
 
-#######################################
-#        COLORS AND FORMATTING        #
-#######################################
-fg_default="\033[39m"
-fg_black="\033[30m"
-fg_red="\033[31m"
-fg_green="\033[32m"
-fg_yellow="\033[33m"
-fg_blue="\033[34m"
-fg_magenta="\033[35m"
-fg_cyan="\033[36m"
-fg_light_gray="\033[37m"
-fg_dark_gray="\033[90m"
-fg_light_red="\033[91m"
-fg_light_green="\033[92m"
-fg_light_yellow="\033[93m"
-fg_light_blue="\033[94m"
-fg_light_magenta="\033[95m"
-fg_light_cyan="\033[96m"
-fg_white="\033[97m"
+readonly fnt_no_bold='\033[21m'
+readonly fnt_no_dim='\033[22m'
+readonly fnt_no_italic='\033[23m'
+readonly fnt_no_underline='\033[24m'
+readonly fnt_no_blink='\033[25m'
+readonly fnt_no_overline='\033[26m'
+readonly fnt_no_reverse='\033[27m'
+readonly fnt_no_hidden='\033[28m'
+readonly fnt_no_strikeout='\033[29m'
 
-bg_default="\033[49m"
-bg_black="\033[40m"
-bg_red="\033[41m"
-bg_green="\033[42m"
-bg_yellow="\033[43m"
-bg_blue="\033[44m"
-bg_magenta="\033[45m"
-bg_cyan="\033[46m"
-bg_light_gray="\033[47m"
-bg_dark_gray="\033[100m"
-bg_light_red="\033[101m"
-bg_light_green="\033[102m"
-bg_light_yellow="\033[103m"
-bg_light_blue="\033[104m"
-bg_light_magenta="\033[105m"
-bg_light_cyan="\033[106m"
-bg_white="\033[107m"
+readonly fnt_reset='\033[0m'
 
-fnt_bold="\033[1m"
-fnt_dim="\033[2m"
-fnt_italic="\033[3m"
-fnt_underline="\033[4m"
-fnt_blink="\033[5m"
-fnt_overline="\033[6m"
-fnt_reverse="\033[7m"
-fnt_hidden="\033[8m"
-fnt_strikeout="\033[9m"
-
-fnt_no_bold="\033[21m"
-fnt_no_dim="\033[22m"
-fnt_no_italic="\033[23m"
-fnt_no_underline="\033[24m"
-fnt_no_blink="\033[25m"
-fnt_no_overline="\033[26m"
-fnt_no_reverse="\033[27m"
-fnt_no_hidden="\033[28m"
-fnt_no_strikeout="\033[29m"
-
-fnt_reset="\033[0m"
-
-#######################################
+##
 # Prints a color table assuming 16bit colors.
 # Globals:
 #   None
@@ -292,312 +303,389 @@ fnt_reset="\033[0m"
 #   None
 # Returns:
 #   None
-#######################################
+#
 function colors_16() {
-    trace "Printing color16 table."
-    #Background
-    for clbg in {40..47} {100..107} 49 ; do
-        #Foreground
-        for clfg in {30..37} {90..97} 39 ; do
-            #Formatting
-            for attr in 0 1 2 3 4 5 6 7 8 9 ; do
-                #Print the result
-                command -p echo -en "\e[${attr};${clbg};${clfg}m ^[${attr};${clbg};${clfg}m \e[0m"
-            done
-            command -p echo #Newline
-        done
+  trace 'Printing color16 table.'
+  #Background
+  for clbg in {40..47} {100..107} 49 ; do
+    #Foreground
+    for clfg in {30..37} {90..97} 39 ; do
+      #Formatting
+      for attr in 0 1 2 3 4 5 6 7 8 9 ; do
+        #Print the result
+        command -p echo -en "\e[${attr};${clbg};${clfg}m ^[${attr};${clbg};${clfg}m \e[0m"
+      done
+      command -p echo #Newline
     done
-    return $EX_OK
+  done
+  return $EX_OK
 }
 
 
-#######################################
-#           OPTION PARSING            #
-#######################################
-#######################################
+
+###############################################################################
+#                               OPTION PARSING                                #
+###############################################################################
+# Constants
+readonly DEFAULT_OPTS='hvql:o:'
+
+# Variables
+declare opts="$DEFAULT_OPTS"
+
+##
 # Parses the specified options from the script arguments.
 # Globals:
 #   opts
 #   DEFAULT_OPTS
 # Arguments:
-#   The script arguments ($*)
+#   The script arguments ($@)
 # Returns:
 #   None
-#######################################
+#
 function parse_opts() {
-    trace "Parsing options using: '$opts'."
-    if [[ $opts =~ $DEFAULT_OPTS.* ]]; then
-        trace "Old options preserved"
-        local opts_new="${opts:${#DEFAULT_OPTS}:99}"
-        if [ ! "$opts_new" == "" ]; then
-            debug "New options: '$opts_new'"
-        fi
-        while command -p getopts "$opts" opt; do
-            case $opt in
-            h|v|q|l|o)
-                trace "Option '$opt' already handled."
-                ;;
-            *)
-                debug "Checking option '$opt'"
-                if [[ $opts_new =~ $opt ]]; then # Option specified
-                    eval "$opt=1"
-                    if [[ $opts_new =~ $opt: ]]; then # Argument provided
-                        opt_name="$opt"
-                        echo "${OPTARG}"
-                        eval "$opt="${OPTARG}""
-                        eval "${opt}_arg="${OPTARG}""
-                        debug "Found option '$opt_name=$opt'."
-                    else
-                        debug "Found option '$opt'."
-                    fi
-                else
-                    debug "Couldn't find '$opt' in '$opts_new'."
-                    print_help
-                    exit $EX_MISSUSE
-                fi
-                ;;
-            esac
-        done
-        shift $((OPTIND-1))
-        trace "Done parsing arguments."
-    else
-        trace "Old options overridden."
+  trace "Parsing options using: '$opts'."
+  if [[ $opts =~ $DEFAULT_OPTS.* ]]; then
+    trace 'Old options preserved'
+    local opts_new="${opts:${#DEFAULT_OPTS}:99}"
+    if [[ -n "$opts_new" ]]; then
+      debug "New options: '$opts_new'"
     fi
-    return $EX_OK
-}
-function print_help() {
-    echo -n "Usage: "
-    for syn in "${syntax[@]}"; do
-        echo "$(basename $0) $syn"
-        echo -n "       "
-    done
-    echo -en "\033[7D"
-    echo "$usage"
-    echo
-    for option in "${optArray[@]}"; do
-        get_opt "$option"
-        if [ ! "$short" == "" ]; then
-            echo -n "  -$short"
-            if [ ! "$long" == "" ]; then
-                echo -n ","
+    while command -p getopts "$opts" opt; do
+      case $opt in
+        h|v|q|l|o)
+          trace "Option '$opt' already handled."
+          ;;
+        *)
+          debug "Checking option '$opt'"
+          if [[ $opts_new =~ $opt ]]; then # Option specified
+            eval "$opt=1"
+            if [[ $opts_new =~ $opt: ]]; then # Argument provided
+              opt_name="$opt"
+              eval "$opt="${OPTARG}""
+              debug "Found option '$opt_name=$opt'."
             else
-                echo -n " "
+              debug "Found option '$opt'."
             fi
-        else
-            echo -en "     "
-        fi
-        if [ ! "$long" == "" ]; then
-            line=" --$long"
-            if [ ! "$argument" == "" ]; then
-                line="$line $argument"
-            fi
-            let "len = $maxlen - ${#line} + 1"
-            echo -en "$line "
-            printf " %.0s" {1..$len}
-        else
-            printf " %.0s" {1..$maxlen}
-        fi
-        echo -e "$descr"
-    done
-    return $EX_OK
-}
-function setup() {
-    if [[ $opts =~ $DEFAULT_OPTS.* ]]; then
-        # Parsing options early
-        if test_option "$*" "h"; then 
+          else
+            debug "Couldn't find '$opt' in '$opts_new'."
             print_help
-            exit $EX_OK
-        fi
-        if test_option "$*" "q"; then
-            loglevel="$LL_QUIET"
-        elif test_option "$*" "v"; then
-            loglevel="$LL_TRACE"
-            debug "Set log level to $loglevel."
-        elif test_option "$*" "l\ *([0-9]*)"; then
-            loglevel=${BASH_REMATCH[1]}
-        fi
-        if [ ! "$loglevel" == "$LL_QUIET" ]; then
-            if test_option "$*" "o\ +([/a-zA-Z0-9\.]+)"; then
-                logfile=${BASH_REMATCH[1]}
-                log2file=1
-            fi
-            debug "Set log level to $loglevel"
-            [ -n "$log2file" ] && debug "Set log file to '$logfile'."
-        fi
+            exit $EX_MISSUSE
+          fi
+          ;;
+      esac
+    done
+    shift $((OPTIND-1))
+    trace 'Done parsing arguments.'
+  else
+    trace 'Old options overridden.'
+  fi
+  return $EX_OK
+}
 
-        ## Trapping signals
-        function trap_this() {
-            trace "Trapping $1 signal. Hook: '$2'."
-            trap "$3; $2" $1 || warn "Could not trap $1 signal."
-        }
-        if [ -z "$trapping" ]; then
-            debug "Trapping signals."
-            trap 'code=$?; error "An Error occurred: $code\n$(check_exit_code $code)"; err $code' ERR
-            err() { exit $1; }
-            trap_this EXIT "cleanup" 'info "Exiting script. Cleaning up."'
-            cleanup() { return $EX_OK; }
-            trap_this HUP "hup" 'fatal "Hangup. The controlling terminal closed."'
-            hup() { exit; }
-            trap_this INT "interrupt" 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."'
-            interrupt() { exit; }
-            trap_this QUIT "quit" 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."'
-            quit() { exit; }
-            trap_this ILL "ill" 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."'
-            ill() { exit; }
-            trap_this TRAP "trapped" 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."'
-            trapped() { exit; }
-            trap_this ABRT "aborted" 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."'
-            abort() { exit; }
-            trap_this BUS "bus" 'error "Access to an undefined portion of a memory object."'
-            bus() { exit; }
-            trap_this FPE "fpe" 'error "Floating-point exception. Erroneous arithmetic operation."'
-            fpe() { exit; }
-            trap_this USR1 "usr1" 'info "USR1 received. User-defined condition."'
-            usr1() { exit; }
-            trap_this USR2 "usr2" 'info "USR2 received. User-defined condition."'
-            usr2() { exit; }
-            trap_this SEGV "segv" 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."'
-            segv() { exit; }
-            trap_this PIPE "pipe" 'error "Process attempted to write to a pipe without a process connected to the other end."'
-            pipe() { exit; }
-            trap_this ALRM   "alarm" 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."'
-            trap_this VTALRM "alarm" 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."'
-            trap_this PROF   "alarm" 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."'
-            alarm() { exit; }
-            trap_this TERM "term" 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."'
-            term() { exit; }
-            # trap_this STKFLT "stackfault" 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."'
-            # stackfault() { exit; }
-            trap_this CHLD "child" 'info "Child process terminated/interrupted/resumed."'
-            child() { return $EX_OK; }
-            trap_this CONT "cont" 'info "Continuing execution."'
-            cont() { return $EX_OK; }
-            trap_this STOP TSTP "stop" 'printf "\033[2D"; info "Stopping execution."'
-            stop() { return $EX_OK; }
-            trap_this TTIN "ttyin" 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
-            ttyin() { return $EX_OK; }
-            trap_this TTOU "ttyout" 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
-            ttyout() { return $EX_OK; }
-            trap_this URG "urgent" 'info "A socket has urgent or out-of-band data available to read."'
-            urgent() { return $EX_OK; }
-            trap_this XCPU "xcpu" 'fatal "CPU time limit exceeded."'
-            xcpu() { exit; }
-            trap_this XFSZ "xfsz" 'fatal "File size limit exceeded."'
-            xfsz() { exit; }
-            trap_this WINCH "window_change" 'info "Controlling terminal changed its size."'
-            window_change() { return $EX_OK; }
-            # trap_this POLL "poll" 'info "An event occurred on an explicitly watched file descriptor."'
-            # poll() { exit; }
-            trap_this PWR "power_fail" 'fatal "The system experiences a power failure."'
-            power_fail() { return $EX_OK; }
-            trap_this SYS "syserror" 'error "The process passed a bad argument to a system call."'
-            syserror() { exit; }
-            trap_this RTMIN    "rtmin0"  'trace "Received real-time signal MIN 0."'
-            trap_this RTMIN+1  "rtmin1"  'trace "Received real-time signal MIN 1."' 
-            trap_this RTMIN+2  "rtmin2"  'trace "Received real-time signal MIN 2."' 
-            trap_this RTMIN+3  "rtmin3"  'trace "Received real-time signal MIN 3."' 
-            trap_this RTMIN+4  "rtmin4"  'trace "Received real-time signal MIN 4."' 
-            trap_this RTMIN+5  "rtmin5"  'trace "Received real-time signal MIN 5."' 
-            trap_this RTMIN+6  "rtmin6"  'trace "Received real-time signal MIN 6."' 
-            trap_this RTMIN+7  "rtmin7"  'trace "Received real-time signal MIN 7."' 
-            trap_this RTMIN+8  "rtmin8"  'trace "Received real-time signal MIN 8."' 
-            trap_this RTMIN+9  "rtmin9"  'trace "Received real-time signal MIN 9."' 
-            trap_this RTMIN+10 "rtmin10" 'trace "Received real-time signal MIN 10."'
-            trap_this RTMIN+11 "rtmin11" 'trace "Received real-time signal MIN 11."'
-            trap_this RTMIN+12 "rtmin12" 'trace "Received real-time signal MIN 12."'
-            trap_this RTMIN+13 "rtmin13" 'trace "Received real-time signal MIN 13."'
-            trap_this RTMIN+14 "rtmin14" 'trace "Received real-time signal MIN 14."'
-            trap_this RTMIN+15 "rtmin15" 'trace "Received real-time signal MIN 15."'
-            trap_this RTMAX    "rtmax0"  'trace "Received real-time signal MAX 0."'
-            trap_this RTMAX-1  "rtmax1"  'trace "Received real-time signal MAX 1."' 
-            trap_this RTMAX-2  "rtmax2"  'trace "Received real-time signal MAX 2."' 
-            trap_this RTMAX-3  "rtmax3"  'trace "Received real-time signal MAX 3."' 
-            trap_this RTMAX-4  "rtmax4"  'trace "Received real-time signal MAX 4."' 
-            trap_this RTMAX-5  "rtmax5"  'trace "Received real-time signal MAX 5."' 
-            trap_this RTMAX-6  "rtmax6"  'trace "Received real-time signal MAX 6."' 
-            trap_this RTMAX-7  "rtmax7"  'trace "Received real-time signal MAX 7."' 
-            trap_this RTMAX-8  "rtmax8"  'trace "Received real-time signal MAX 8."' 
-            trap_this RTMAX-9  "rtmax9"  'trace "Received real-time signal MAX 9."' 
-            trap_this RTMAX-10 "rtmax10" 'trace "Received real-time signal MAX 10."'
-            trap_this RTMAX-11 "rtmax11" 'trace "Received real-time signal MAX 11."'
-            trap_this RTMAX-12 "rtmax12" 'trace "Received real-time signal MAX 12."'
-            trap_this RTMAX-13 "rtmax13" 'trace "Received real-time signal MAX 13."'
-            trap_this RTMAX-14 "rtmax14" 'trace "Received real-time signal MAX 14."'
-            rtmin0()  { return $EX_OK; }
-            rtmin1()  { return $EX_OK; }
-            rtmin2()  { return $EX_OK; }
-            rtmin3()  { return $EX_OK; }
-            rtmin4()  { return $EX_OK; }
-            rtmin5()  { return $EX_OK; }
-            rtmin6()  { return $EX_OK; }
-            rtmin7()  { return $EX_OK; }
-            rtmin8()  { return $EX_OK; }
-            rtmin9()  { return $EX_OK; }
-            rtmin10() { return $EX_OK; }
-            rtmin11() { return $EX_OK; }
-            rtmin12() { return $EX_OK; }
-            rtmin13() { return $EX_OK; }
-            rtmin14() { return $EX_OK; }
-            rtmin15() { return $EX_OK; }
-            rtmax0()  { return $EX_OK; }
-            rtmax1()  { return $EX_OK; }
-            rtmax2()  { return $EX_OK; }
-            rtmax3()  { return $EX_OK; }
-            rtmax4()  { return $EX_OK; }
-            rtmax5()  { return $EX_OK; }
-            rtmax6()  { return $EX_OK; }
-            rtmax7()  { return $EX_OK; }
-            rtmax8()  { return $EX_OK; }
-            rtmax9()  { return $EX_OK; }
-            rtmax10() { return $EX_OK; }
-            rtmax11() { return $EX_OK; }
-            rtmax12() { return $EX_OK; }
-            rtmax13() { return $EX_OK; }
-            rtmax14() { return $EX_OK; }
-            rtmax15() { return $EX_OK; }
-        fi
+function print_help() {
+  echo -n 'Usage: '
+  for syn in "${syntax[@]}"; do
+    echo "$(basename $0) $syn"
+    echo -n '       '
+  done
+  echo -en '\033[7D'
+  echo "$usage"
+  echo
+  for option in "${optArray[@]}"; do
+    get_opt "$option"
+    if [[ -n "$short" ]]; then
+      echo -n "  -$short"
+      if [[ -n "$long" ]]; then
+        echo -n ','
+      else
+        echo -n ' '
+      fi
+    else
+      echo -en '     '
     fi
-    parse_opts "$@"
-    return $?
+    if [[ -n "$long" ]]; then
+      line=" --$long"
+      if [[ -n "$argument" ]]; then
+        line="$line $argument"
+      fi
+      let "len = $maxlen - ${#line} + 1"
+      echo -en "$line "
+      printf ' %.0s' {1..$len}
+    else
+      printf ' %.0s' {1..$maxlen}
+    fi
+    echo -e "$descr"
+  done
+  return $EX_OK
 }
+
+function setup() {
+  if [[ $opts =~ $DEFAULT_OPTS.* ]]; then
+    # Parsing options early
+    if test_option "$@" 'h'; then 
+      print_help
+      exit $EX_OK
+    fi
+    if test_option "$@" 'q'; then
+      loglevel=$LL_QUIET
+    elif test_option "$@" 'v'; then
+      loglevel=$LL_TRACE
+      debug "Set log level to $loglevel."
+    elif test_option "$@" 'l\ *([0-9]*)'; then
+      loglevel=${BASH_REMATCH[1]}
+    fi
+    if [[ $loglevel -ne $LL_QUIET ]]; then
+      if test_option "$@" 'o\ +([/a-zA-Z0-9\.]+)'; then
+        logfile=${BASH_REMATCH[1]}
+        log2file=1
+      fi
+      debug "Set log level to $loglevel"
+      [[ -n "$log2file" ]] && debug "Set log file to '$logfile'."
+    fi
+    if [[ -z "$trapping" ]]; then
+      trap_signals
+    fi
+  fi
+  parse_opts "$@"
+  return $?
+}
+
 function test_option() {
-    [[ \ $1 =~  \ -[a-zA-Z0-9]*$2 ]] && return $EX_OK;
-    return $EX_ERR;
+  [[ \ $1 =~  \ -[a-zA-Z0-9]*$2 ]] && return $EX_OK;
+  return $EX_ERR;
 }
 
-# Constants
-DEFAULT_OPTS="hvql:o:"
 
+###############################################################################
+#                               SIGNAL TRAPPING                               #
+###############################################################################
 # Variables
-opts="$DEFAULT_OPTS"
-traps=(
-    ERR
-    INT
-    EXIT
+declare -a traps=(
+  ERR
+  EXIT
+  INT
 )
 
+##
+# Trap a signal or release it.
+# Globals:
+#   None
+# Arguments:
+#   Signal name(case or "SIG"-prefix irrelevant)
+#   Callback function(Or "-" to release the signal from the trap)
+# Returns:
+#   Success/Failure
+#
+function trap_sig() {
+  local -u sig="$1"
+  sig="${1/SIG/}"
+  if [[ "$2" = "-" ]]; then
+    trace "Removing trap of signal 'SIG$sig'."
+    if ! trap "-" "$sig"; then
+      warn 'Could not release signal.'
+      return $EX_ERR
+    fi
+  else
+    local -l callback="sig_$sig"
+    callback="${callback/+/_}"
+    callback="${callback/-/_}"
+    local delegate=$(cat <<EOF
+          $2
+          if type $callback &> /dev/null; then
+            trace "Calling callback function '$callback()'."
+            $callback $cb_arg
+          else
+            error "Callback function '$callback()' not defined."
+          fi
+EOF
+    )
+    trace "Trapping 'SIG$sig'. Callback: $callback()."
+    if ! trap "$delegate" "$sig"; then
+      warn 'Could not trap signal.'
+      return $EX_ERR
+    fi
+  fi
+  return $EX_OK
+}
+
+##
+# Traps all the signals specified in the traps-array.
+# Globals:
+#   traps
+#   BASH_REMATCH
+# Arguments:
+#   None
+# Returns:
+#   Success/Failure
+#
+function trap_signals() {
+  trace 'Trapping signals.'
+  local -u sig
+  for sig in "${traps[@]}"; do
+    case $sig in
+      EXIT)
+        trap_sig EXIT 'info "Exiting script. Cleaning up."'
+        ;;
+      ERR)
+        trap_sig ERR 'error "An Error occurred: $?\n$(check_retval $?)"'
+        ;;
+      DEBUG)
+        trap_sig DEBUG 'info "Debugging."'
+        ;;
+      RETURN)
+        trap_sig RETURN 'info "Returning from sourced script."'
+        ;;
+      HUP)
+        trap_sig HUP 'fatal "Hangup. The controlling terminal closed."'
+        ;;
+      INT)
+        trap_sig INT 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."'
+        ;;
+      QUIT)
+        trap_sig QUIT 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."'
+        ;;
+      ILL)
+        trap_sig ILL 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."'
+        ;;
+      TRAP)
+        trap_sig TRAP 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."'
+        ;;
+      ABRT)
+        trap_sig ABRT 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."'
+        ;;
+      BUS)
+        trap_sig BUS 'error "Access to an undefined portion of a memory object."'
+        ;;
+      BUS)
+        trap_sig FPE 'error "Floating-point exception. Erroneous arithmetic operation."'
+        ;;
+      USR1)
+        trap_sig USR1 'info "USR1 received. User-defined condition."'
+        ;;
+      USR2)
+        trap_sig USR2 'info "USR2 received. User-defined condition."'
+        ;;
+      SEGV)
+        trap_sig SEGV 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."'
+        ;;
+      PIPE)
+        trap_sig PIPE 'error "Process attempted to write to a pipe without a process connected to the other end."'
+        ;;
+      ALRM|VTALRM|PROF)
+        trap_sig ALRM 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."'
+        ;;
+      TERM)
+        trap_sig TERM 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."'
+        ;;
+      STKFLT)
+        trap_sig STKFLT 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."'
+        ;;
+      CHLD)
+        trap_sig CHLD 'info "Child process terminated/interrupted/resumed."'
+        ;;
+      CONT)
+        trap_sig CONT 'info "Continuing execution."'
+        ;;
+      STOP|TSTP)
+        trap_sig STOP 'printf "\033[2D"; info "Stopping execution."'
+        ;;
+      TTIN)
+        trap_sig TTIN 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
+        ;;
+      TTOU)
+        trap_sig TTOU 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
+        ;;
+      URG)
+        trap_sig URG 'info "A socket has urgent or out-of-band data available to read."'
+        ;;
+      XCPU)
+        trap_sig XCPU 'fatal "CPU time limit exceeded."'
+        ;;
+      XFSZ)
+        trap_sig XFSZ 'fatal "File size limit exceeded."'
+        ;;
+      WINCH)
+        trap_sig WINCH 'info "Controlling terminal changed its size."'
+        ;;
+      POLL)
+        trap_sig POLL 'info "An event occurred on an explicitly watched file descriptor."'
+        ;;
+      PWR)
+        trap_sig PWR 'fatal "The system experiences a power failure."'
+        ;;
+      SYS)
+        trap_sig SYS 'error "The process passed a bad argument to a system call."'
+        ;;
+      RTMIN*)
+        local -i num
+        if [[ $sig =~ ^RTMIN\+([1-9]([0-5]|))$ ]]; then
+          num=${BASH_REMATCH[1]}
+        elif [[ $sig =~ ^RTMIN$ ]]; then
+          num=0
+        else
+          error "Signal 'SIG$sig' unknown. Cannot trap."
+          continue
+        fi
+        trap_sig "$sig" "trace \"Received real-time signal MIN $num.\""
+        ;;
+      RTMAX*)
+        local -i num
+        if [[ $sig =~ ^RTMAX\-([1-9]([0-4]|))$ ]]; then
+          num=${BASH_REMATCH[1]}
+        elif [[ $sig =~ ^RTMAX$ ]]; then
+          num=0
+        else
+          error "Signal 'SIG$sig' unknown. Cannot trap."
+          continue
+        fi
+        trap_sig "$sig" "trace \"Received real-time signal MAX $num.\""
+        ;;
+      *)
+        debug "Signal 'SIG$sig' unknown. Trying to trap anyway."
+        trap_sig "$sig" 'trace "Recieved "SIG$sig" signal."'
+        ;;
+    esac
+  done
+  return $EX_OK
+}
 
 
-## Tests:
+###############################################################################
+#                                     EOF                                     #
+###############################################################################
 
 # Preamble
 opts="${opts}a:"
 syntax=(
-    "[OPTION]..."
-    "[OPTION]... [FILE]"
+  '[OPTION]...'
+  '[OPTION]... [FILE]'
 )
-usage="Remove (unlink) the FILE(s)."
-
-# Setup
+usage='Remove (unlink) the FILE(s).'
+traps=(
+  ERr
+  EXIT
+  INT
+)
+sig_err() { exit; }
+sig_exit() { exit; }
+sig_int() { exit; }
 setup "$@"
 
 # Code
-
+sig_debug() {
+    local -i row="$((${BASH_LINENO[0]} - 3))"
+    local text=$(sed "${row}q;d" "$(basename $0)")
+    debug "$row: $text"
+    read;
+}
+trap_sig DEBUG ''
+echo "$LINENO"
+echo "$LINENO"
 echo "a = $a"
 if type setterm &>/dev/null; then
-    read
-    setterm --term linux --back green --fore black --clear all
+  read
+  setterm --term linux --back green --fore black --clear all
 fi
 while true; do
-    ls &> /dev/null
+  ls &> /dev/null
 done
