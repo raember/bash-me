@@ -3,32 +3,34 @@ Trying to make a reusable bash template
 
 ## Logging
 Logging with the popular log levels is supported as follows:
-* `trace` (Logging level 0: `loglevel="$ll_trace"`)
-* `debug` (Logging level 1: `loglevel="$ll_debug"`)
-* `info`  (Logging level 2: `loglevel="$ll_info"`)
-* `warn`  (Logging level 3: `loglevel="$ll_warn"`)
-* `error` (Logging level 4: `loglevel="$ll_error"`)
-* `fatal` (Logging level 5: `loglevel="$ll_fatal"`)
+* `trace` (Logging level 0: `loglevel=$LL_TRACE`)
+* `debug` (Logging level 1: `loglevel=$LL_DEBUG`)
+* `info`  (Logging level 2: `loglevel=$LL_INFO`)
+* `warn`  (Logging level 3: `loglevel=$LL_WARN`)
+* `error` (Logging level 4: `loglevel=$LL_ERROR`)
+* `fatal` (Logging level 5: `loglevel=$LL_FATAL`)
 
-The default log level is `loglevel=$ll_debug`. The logging can be completely muted by setting the loglevel to 6: `loglevel=$ll_quiet`.
+The default log level is `loglevel=$LL_INFO`. The logging can be completely muted by setting the loglevel to `$LL_QUIET`.
 
 To write the logs to a log file, the variable `log2file` can be set. The logs will then be written to a file with the same name as the executing script file, a ".log" appended.
 If desired, the logfile name can be changed via the `logfile` variable.
 
-## Exit codes
+To disable logging to `stdout`/`stderr`, the variable `log2std` can be cleared.
+
+## Return values
 Constants for the commonly used exit codes according to [tldp.org](http://www.tldp.org/LDP/abs/html/exitcodes.html#EXITCODESREF "Appendix E. Exit Codes With Special Meanings"):
 
 | Exit Code | Exit Code Number | Meaning | Example | Comments |
 | --- | --- | --- | --- | --- |
-| `$exit_ok` | `0` | Code exited normally | `echo "Hello world!"` | |
-| `$exit_err` | `1` | Catchall for general errors | `let "var1 = 1/0"` | Miscellaneous errors, such as "divide by zero" and other impermissible operations |
-| `$exit_missuse` | `2` | Misuse of shell builtins (according to Bash documentation) | `empty_function() {}` | [Missing keyword](http://www.tldp.org/LDP/abs/html/debugging.html#MISSINGKEYWORD) or command, or permission problem (and [diff return code on a failed binary file comparison](http://www.tldp.org/LDP/abs/html/filearchiv.html#DIFFERR2)). |
-| `$exit_cannotexec` | `126` | Command invoked cannot execute | `/dev/null` | Permission problem or command is not an executable |
-| `$exit_cmdnotfound` | `127` | "command not found" | `illegal_command` | Possible problem with $PATH or a typo |
-| `$exit_invalarg` | `128` | Invalid argument to [exit](http://www.tldp.org/LDP/abs/html/exit-status.html#EXITCOMMANDREF) | `exit 3.14159` | **exit** takes only integer args in the range 0 - 255 (see first footnote) |
-| `$exit_fatal_base + n` | `128 + n` | Fatal error signal `n` | `kill -9 $PPID of script` | `$?` returns 137 (128 + 9) |
-| `$exit_ctrlc` | `130` | Script terminated by Control-C | *Ctl-C* | Control-C is fatal error signal 2, (130 = 128 + 2, see above) |
-| `$exit_outofrng` | `255` | Exit status out of range | `exit -1` | **exit** takes only integer args in the range 0 - 255 |
+| `$EX_OK` | `0` | Code exited normally | `echo "Hello world!"` | |
+| `$EX_ERR` | `1` | Catchall for general errors | `let "var1 = 1/0"` | Miscellaneous errors, such as "divide by zero" and other impermissible operations |
+| `$EX_MISSUSE` | `2` | Misuse of shell builtins (according to Bash documentation) | `empty_function() {}` | [Missing keyword](http://www.tldp.org/LDP/abs/html/debugging.html#MISSINGKEYWORD) or command, or permission problem (and [diff return code on a failed binary file comparison](http://www.tldp.org/LDP/abs/html/filearchiv.html#DIFFERR2)). |
+| `$EX_CANNOTEXEC` | `126` | Command invoked cannot execute | `/dev/null` | Permission problem or command is not an executable |
+| `$EX_CMDNOTFOUND` | `127` | "command not found" | `illegal_command` | Possible problem with $PATH or a typo |
+| `$EX_INVALARG` | `128` | Invalid argument to [exit](http://www.tldp.org/LDP/abs/html/exit-status.html#EXITCOMMANDREF) | `exit 3.14159` | **exit** takes only integer args in the range 0 - 255 (see first footnote) |
+| `$EX_FATAL_BASE + n` | `128 + n` | Fatal error signal `n` | `kill -9 $PPID of script` | `$?` returns 137 (128 + 9) |
+| `$EX_INT` | `130` | Command terminated by Control-C | *Ctl-C* | Control-C is fatal error signal 2, (130 = 128 + 2, see above) |
+| `$EX_OUTOFRANGE` | `255` | Exit status out of range | `exit -1` | **exit** takes only integer args in the range 0 - 255 |
 
 To simplify the checking of the exit codes, the command `check_exit_code $?` can be used, which also logs the result appropriately. It can further be used in if-statements:
 ```sh
@@ -39,7 +41,9 @@ else
     echo "faulty execution"
 fi
 ```
-Keep in mind that the checking of positive return values logs messages on the `$ll_warn` level.
+Or one could use the `case` clause to further evaluate a return value.
+
+Keep in mind that the checking of unknown return values logs messages on the `$LL_WARN` level.
 
 ## Colors and formatting
 To make formatting easier, here are some constants to use while formatting strings:
@@ -75,26 +79,8 @@ To make formatting easier, here are some constants to use while formatting strin
 
 Keep in mind that to use those in an `echo` command, the `-e` flag is mandatory.
 
-## Option parsing
-To define an option to parse for, the variable `opts` can be set:
-```sh
-opts=<flags>
-```
-`flags`: The flags used by getopts to parse the arguments. For example:
-```sh
-opts="ol:hv"
-```
-for parsing flags like `-h -l file -o -v`.
-
-By default, the following options are predefined:
-* `h`: Show usage and help text.
-* `v`: Be verbose(loglevel 0).
-* `q`: Be quiet(no logs - overrides `v`).
-* `l:`: Loglevel(defaults to `2`(INFO)).
-* `o:`: Writes to logfile(defaults to `$(basename $0)` - argument optional).
-* `t`: Don't setup signal traps.
-
-The actual parsing of the arguments can be initiated via the `setup "$*"` method.
+To test the available formatting capabilities, test them with the following commands:
+* `formatting_test`: Writes a table with all the available formattings.
 
 ## Trapping signals
 The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html):
@@ -149,16 +135,15 @@ trap_sig DEBUG ''
 ```
 This displays the the row number and the code on that row which is about to be executed after hitting `[ENTER]`.
 
-To trap those ferocious beasts, edit the `traps` array:
+To mark signals for future trapping, edit the `traps` array:
 ```sh
 # Default traps:
 traps=(
   ERR
-  EXIT
   INT
 )
 
-# In your script, either delete
+# In the script, either delete
 traps=()
 # Recreate
 traps=(
@@ -166,11 +151,28 @@ traps=(
     USR2
 )
 # Or add new traps:
-traps+=(ERR)
+traps+=(EXIT)
 ```
 Keep in mind that trapped signals require a callback function to be defined according to the table above.
+
+If a signal should be trapped which hasn't been defined in the table above, it still tries to trap it.
+
+After that, call the `trap_signals` function to trap those ferocious beasts.
 
 To release a trapped signal back into the wilderness, call the `trap_sig` function with the signal to be released and a `"-"` as callback function. For example to release a previously trapped signal, execute:
 ```sh
 trap_sig INT '-'
+```
+
+## Option parsing
+To parse options, run the `parse_opts` command with the `getopts`-argument. Example:
+```sh
+# Parses the argument list for h-, f-(with argument) and l-flags:
+parse_opts "hf:l"
+```
+To specify long arguments, add the mapping to the `option_map`-array:
+```sh
+option_map+=(
+    [help]=h
+)
 ```
