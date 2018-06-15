@@ -5,8 +5,8 @@
 #                scripting.
 #author         :Raphael Emberger
 #date           :20180612
-#version        :0.1    
-#usage          :./bashme.sh
+#VERSION        :0.1    
+#USAGE          :./bashme.sh
 #notes          :
 #bash_version   :4.4.12(1)-release
 #==============================================================================
@@ -27,7 +27,7 @@ declare -ri LL_QUIET=6
 
 # Variables
 declare -i loglevel=$LL_INFO
-declare logfile="./$(command -p basename "$0").log"
+declare logfile="./$(basename "$0").log"
 declare log2file=''
 declare log2std=1
 
@@ -53,12 +53,12 @@ declare log2std=1
 function log() {
   local lineno="${BASH_LINENO[$((${#BASH_LINENO} - 1))]}"
   local location=" ${FUNCNAME[2]}(): "
-  local logmsg="$(command -p date '+%Y-%M-%d %H:%m:%S') $3($lineno)$location$4"
+  local logmsg="$(date '+%Y-%M-%d %H:%m:%S') $3($lineno)$location$4"
   if [[ -n "$log2std" ]]; then
     if (( $2 >= $LL_ERROR )); then
-      command -p echo -e "$1$logmsg$fnt_reset" >&2
+      echo -e "$1$logmsg$fnt_reset" >&2
     else
-      command -p echo -e "$1$logmsg$fnt_reset"
+      echo -e "$1$logmsg$fnt_reset"
     fi
   fi
   [[ -n "$log2file" ]] && echo "$logmsg" >> $logfile
@@ -71,6 +71,7 @@ function log() {
 #   LL_TRACE
 #   loglevel
 #   fg_light_gray
+#   fnt_dim
 # Arguments:
 #   Log message
 # Returns:
@@ -78,7 +79,7 @@ function log() {
 #
 function trace() {
   [[ $loglevel -gt $LL_TRACE ]] && return $EX_OK
-  log "$fg_light_gray" $LL_TRACE '[TRACE]' "$1"
+  log "$fg_light_gray$fnt_dim" $LL_TRACE '[TRACE]' "$1"
   return $EX_OK
 }
 
@@ -138,7 +139,7 @@ function warn() {
 # Globals:
 #   LL_ERROR
 #   loglevel
-#   fg_light_red
+#   fg_red
 # Arguments:
 #   Log message
 # Returns:
@@ -146,7 +147,7 @@ function warn() {
 #
 function error() {
   [[ $loglevel -gt $LL_ERROR ]] && return $EX_OK
-  log "$fg_light_red" $LL_ERROR '[ERROR]' "$1"
+  log "$fg_red" $LL_ERROR '[ERROR]' "$1"
   return $EX_OK
 }
 
@@ -163,24 +164,47 @@ function error() {
 #
 function fatal() {
   [[ $loglevel -gt $LL_FATAL ]] && return $EX_OK
-  log "$fg_red" $LL_FATAL '[FATAL]' "$1"
+  log "$fg_light_red$fnt_bold" $LL_FATAL '[FATAL]' "$1"
   return $EX_OK
 }
 
 ##
-# A makeshift function to cover logging the access to not yet implemented
+# A makeshift function to cover logging the access to not yet implemented.
 # functionality.
 # Globals:
 #   LL_FATAL
 #   loglevel
-#   fg_red
+#   fg_light_red
+#   fnt_bold
 # Arguments:
 #   None
 # Returns:
 #   None
 #
-function niy() {
+function NYI() {
   fatal "Not implemented yet!"
+  return $EX_OK
+}
+
+##
+# Marks a position in the code as a TODO.
+# Globals:
+#   LL_INFO
+#   loglevel
+#   fg_green
+#   fnt_bold
+# Arguments:
+#   The description of the work to be done.
+# Returns:
+#   None
+#
+function TODO() {
+  function log_todo() {
+    [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
+    log "$fg_green$fnt_bold" $LL_INFO '[TODO]' "$1"
+    return $EX_OK
+  }
+  log_todo "$1"
   return $EX_OK
 }
 
@@ -344,15 +368,15 @@ readonly fnt_reset='\033[0m'
 #
 function formatting_test() {
   trace 'Printing formatting table.'
-  command -p echo -e "Bold:      ${fnt_bold}Bold${fnt_no_bold}.      No Bold${fnt_reset}."
-  command -p echo -e "Dim:       ${fnt_dim}Dim${fnt_no_dim}.       No Dim${fnt_reset}."
-  command -p echo -e "Italic:    ${fnt_italic}Italic${fnt_no_italic}.    No Italic${fnt_reset}."
-  command -p echo -e "Underline: ${fnt_underline}Underline${fnt_no_underline}. No Underline${fnt_reset}."
-  command -p echo -e "Blink:     ${fnt_blink}Blink${fnt_no_blink}.     No Blink${fnt_reset}."
-  command -p echo -e "Overline:  ${fnt_overline}Overline${fnt_no_overline}.  No Overline${fnt_reset}."
-  command -p echo -e "Reverse:   ${fnt_reverse}Reverse${fnt_no_reverse}.   No Reverse${fnt_reset}."
-  command -p echo -e "Hidden:    ${fnt_hidden}Hidden${fnt_no_hidden}.    No Hidden${fnt_reset}."
-  command -p echo -e "Strikeout: ${fnt_strikeout}Strikeout${fnt_no_strikeout}. No Strikeout${fnt_reset}."
+  echo -e "Bold:      ${fnt_bold}Bold${fnt_no_bold}.      No Bold${fnt_reset}."
+  echo -e "Dim:       ${fnt_dim}Dim${fnt_no_dim}.       No Dim${fnt_reset}."
+  echo -e "Italic:    ${fnt_italic}Italic${fnt_no_italic}.    No Italic${fnt_reset}."
+  echo -e "Underline: ${fnt_underline}Underline${fnt_no_underline}. No Underline${fnt_reset}."
+  echo -e "Blink:     ${fnt_blink}Blink${fnt_no_blink}.     No Blink${fnt_reset}."
+  echo -e "Overline:  ${fnt_overline}Overline${fnt_no_overline}.  No Overline${fnt_reset}."
+  echo -e "Reverse:   ${fnt_reverse}Reverse${fnt_no_reverse}.   No Reverse${fnt_reset}."
+  echo -e "Hidden:    ${fnt_hidden}Hidden${fnt_no_hidden}.    No Hidden${fnt_reset}."
+  echo -e "Strikeout: ${fnt_strikeout}Strikeout${fnt_no_strikeout}. No Strikeout${fnt_reset}."
   return $EX_OK
 }
 
@@ -401,42 +425,42 @@ function formatting_test() {
 #
 function color_test() {
   trace 'Printing color table.'
-  command -p echo -e "Foreground:"
-  command -p echo -e  "fg_default:    ${fg_default}fg_default${fnt_reset}"
-  command -p echo -en "fg_black:      ${fg_black}fg_black${fnt_reset}      "
-  command -p echo -e  "fg_dark_gray:     ${fg_dark_gray}fg_dark_gray${fnt_reset}"
-  command -p echo -en "fg_red:        ${fg_red}fg_red${fnt_reset}        "
-  command -p echo -e  "fg_light_red:     ${fg_light_red}fg_light_red${fnt_reset}"
-  command -p echo -en "fg_green:      ${fg_green}fg_green${fnt_reset}      "
-  command -p echo -e  "fg_light_green:   ${fg_light_green}fg_light_green${fnt_reset}"
-  command -p echo -en "fg_yellow:     ${fg_yellow}fg_yellow${fnt_reset}     "
-  command -p echo -e  "fg_light_yellow : ${fg_light_yellow}fg_light_yellow${fnt_reset}"
-  command -p echo -en "fg_blue:       ${fg_blue}fg_blue${fnt_reset}       "
-  command -p echo -e  "fg_light_blue:    ${fg_light_blue}fg_light_blue${fnt_reset}"
-  command -p echo -en "fg_magenta:    ${fg_magenta}fg_magenta${fnt_reset}    "
-  command -p echo -e  "fg_light_magenta: ${fg_light_magenta}fg_light_magenta${fnt_reset}"
-  command -p echo -en "fg_cyan:       ${fg_cyan}fg_cyan${fnt_reset}       "
-  command -p echo -e  "fg_light_cyan:    ${fg_light_cyan}fg_light_cyan${fnt_reset}"
-  command -p echo -en "fg_light_gray: ${fg_light_gray}fg_light_gray${fnt_reset} "
-  command -p echo -e  "fg_white:         ${fg_white}fg_white${fnt_reset}"
-  command -p echo -e "Background:"
-  command -p echo -e  "bg_default:    ${bg_default}bg_default${fnt_reset}"
-  command -p echo -en "bg_black:      ${bg_black}bg_black${fnt_reset}      "
-  command -p echo -e  "bg_dark_gray:     ${bg_dark_gray}bg_dark_gray${fnt_reset}"
-  command -p echo -en "bg_red:        ${bg_red}bg_red${fnt_reset}        "
-  command -p echo -e  "bg_light_red:     ${bg_light_red}bg_light_red${fnt_reset}"
-  command -p echo -en "bg_green:      ${bg_green}bg_green${fnt_reset}      "
-  command -p echo -e  "bg_light_green:   ${bg_light_green}bg_light_green${fnt_reset}"
-  command -p echo -en "bg_yellow:     ${bg_yellow}bg_yellow${fnt_reset}     "
-  command -p echo -e  "bg_light_yellow : ${bg_light_yellow}bg_light_yellow${fnt_reset}"
-  command -p echo -en "bg_blue:       ${bg_blue}bg_blue${fnt_reset}       "
-  command -p echo -e  "bg_light_blue:    ${bg_light_blue}bg_light_blue${fnt_reset}"
-  command -p echo -en "bg_magenta:    ${bg_magenta}bg_magenta${fnt_reset}    "
-  command -p echo -e  "bg_light_magenta: ${bg_light_magenta}bg_light_magenta${fnt_reset}"
-  command -p echo -en "bg_cyan:       ${bg_cyan}bg_cyan${fnt_reset}       "
-  command -p echo -e  "bg_light_cyan:    ${bg_light_cyan}bg_light_cyan${fnt_reset}"
-  command -p echo -en "bg_light_gray: ${bg_light_gray}bg_light_gray${fnt_reset} "
-  command -p echo -e  "bg_white:         ${bg_white}bg_white${fnt_reset}"
+  echo -e "Foreground:"
+  echo -e  "fg_default:    ${fg_default}fg_default${fnt_reset}"
+  echo -en "fg_black:      ${fg_black}fg_black${fnt_reset}      "
+  echo -e  "fg_dark_gray:     ${fg_dark_gray}fg_dark_gray${fnt_reset}"
+  echo -en "fg_red:        ${fg_red}fg_red${fnt_reset}        "
+  echo -e  "fg_light_red:     ${fg_light_red}fg_light_red${fnt_reset}"
+  echo -en "fg_green:      ${fg_green}fg_green${fnt_reset}      "
+  echo -e  "fg_light_green:   ${fg_light_green}fg_light_green${fnt_reset}"
+  echo -en "fg_yellow:     ${fg_yellow}fg_yellow${fnt_reset}     "
+  echo -e  "fg_light_yellow : ${fg_light_yellow}fg_light_yellow${fnt_reset}"
+  echo -en "fg_blue:       ${fg_blue}fg_blue${fnt_reset}       "
+  echo -e  "fg_light_blue:    ${fg_light_blue}fg_light_blue${fnt_reset}"
+  echo -en "fg_magenta:    ${fg_magenta}fg_magenta${fnt_reset}    "
+  echo -e  "fg_light_magenta: ${fg_light_magenta}fg_light_magenta${fnt_reset}"
+  echo -en "fg_cyan:       ${fg_cyan}fg_cyan${fnt_reset}       "
+  echo -e  "fg_light_cyan:    ${fg_light_cyan}fg_light_cyan${fnt_reset}"
+  echo -en "fg_light_gray: ${fg_light_gray}fg_light_gray${fnt_reset} "
+  echo -e  "fg_white:         ${fg_white}fg_white${fnt_reset}"
+  echo -e "Background:"
+  echo -e  "bg_default:    ${bg_default}bg_default${fnt_reset}"
+  echo -en "bg_black:      ${bg_black}bg_black${fnt_reset}      "
+  echo -e  "bg_dark_gray:     ${bg_dark_gray}bg_dark_gray${fnt_reset}"
+  echo -en "bg_red:        ${bg_red}bg_red${fnt_reset}        "
+  echo -e  "bg_light_red:     ${bg_light_red}bg_light_red${fnt_reset}"
+  echo -en "bg_green:      ${bg_green}bg_green${fnt_reset}      "
+  echo -e  "bg_light_green:   ${bg_light_green}bg_light_green${fnt_reset}"
+  echo -en "bg_yellow:     ${bg_yellow}bg_yellow${fnt_reset}     "
+  echo -e  "bg_light_yellow : ${bg_light_yellow}bg_light_yellow${fnt_reset}"
+  echo -en "bg_blue:       ${bg_blue}bg_blue${fnt_reset}       "
+  echo -e  "bg_light_blue:    ${bg_light_blue}bg_light_blue${fnt_reset}"
+  echo -en "bg_magenta:    ${bg_magenta}bg_magenta${fnt_reset}    "
+  echo -e  "bg_light_magenta: ${bg_light_magenta}bg_light_magenta${fnt_reset}"
+  echo -en "bg_cyan:       ${bg_cyan}bg_cyan${fnt_reset}       "
+  echo -e  "bg_light_cyan:    ${bg_light_cyan}bg_light_cyan${fnt_reset}"
+  echo -en "bg_light_gray: ${bg_light_gray}bg_light_gray${fnt_reset} "
+  echo -e  "bg_white:         ${bg_white}bg_white${fnt_reset}"
   return $EX_OK
 }
 
@@ -450,13 +474,17 @@ declare -a traps=(
   ERR
   INT
 )
+sig_err() { exit; }
+sig_int() { exit; }
+sig_debug() { return; }
+
 
 ##
 # Trap a signal or release it.
 # Globals:
 #   None
 # Arguments:
-#   Signal name(case or "SIG"-prefix irrelevant)
+#   Signal NAME(case or "SIG"-prefix irrelevant)
 #   Callback function(Or "-" to release the signal from the trap)
 # Returns:
 #   Success/Failure
@@ -512,7 +540,7 @@ function trap_signals() {
         trap_sig EXIT 'info "Exiting script. Cleaning up."'
         ;;
       ERR)
-        trap_sig ERR 'error "An Error occurred: $?\n$(check_retval $?)"'
+        trap_sig ERR 'errcode=$?; error "An Error occurred: $errcode"; check_retval $errcode'
         ;;
       DEBUG)
         trap_sig DEBUG 'info "Debugging."'
@@ -645,33 +673,74 @@ declare -a opts_short=()
 declare -a opts_long=()
 declare -a opts_arg=()
 declare -a opts_help=()
+declare -i max_len_long=0
+declare -i max_len_arg=0
+declare -a args=()
+declare NAME
+declare VERSION
+declare USAGE
+declare -a SYNTAX
+declare DESCRIPTION
 
+##
+# Defines an option to be parsed for and to put into the help page.
+# Globals:
+#   opts_var
+#   opts_short
+#   opts_long
+#   opts_arg
+#   opts_help
+#   max_len_long
+#   max_len_arg
+# Arguments:
+#   The variable to set
+#   The short command(optional)
+#   The long command(optional)
+#   The argument of the option(optional)
+#   The description of the option
+# Returns:
+#   None
+#
 define_opt() {
-  trace "Defining option."
+  debug "Defining option '$1'. Short: '$2'. Long: '$3'. Argument: '$4'."
   opts_var+=("$1")
   opts_short+=("$2")
   opts_long+=("$3")
   opts_arg+=("$4")
   opts_help+=("$5")
-  debug "Defined option. Short: '$1'. Long: '$2'. Argument: '$3'"
+  max_len_long="$((${#3} > max_len_long ? ${#3} : max_len_long))"
+  max_len_arg="$((${#4} > max_len_arg ? ${#4} : max_len_arg))"
 }
 
 ##
 # Parses the specified options from the script arguments.
 # Globals:
-#   None
+#   BASH_REMATCH
+#   opts_var
+#   opts_short
+#   opts_long
+#   opts_arg
+#   opts_help
+#   args
 # Arguments:
 #   The script arguments ($@)
 # Returns:
 #   None
 #
-function parse_opts() {
+function parse_args() {
   # Define helper functions
   function find_matching_opt() {
-    trace "Matching '$opt' against the defined options."
+    trace "Matching '$opt_str' against the defined options."
     for index in "${!opts_short[@]}"; do
-      if [[ $opt =~ ^\s*(${opts_short[$index]}|${opts_long[$index]}) ]]; then
-        trace "Found a match at index '$index'."
+      local short="${opts_short[$index]}"
+      local long="${opts_long[$index]}"
+      # Fix matching of no such option defined:
+      [[ -z "$long" ]] && long="#"
+      [[ -z "$short" ]] && short="#"
+      if [[ $opt_str =~ ^\s*($short|$long)(.*)$ ]]; then
+        opt="${BASH_REMATCH[1]}"
+        opt_str="${BASH_REMATCH[2]}"
+        trace "Found '$opt' at index $index. Remaining string: '$opt_str'"
         return $EX_OK
       fi
     done
@@ -679,7 +748,7 @@ function parse_opts() {
     return $EX_ERR
   }
   function expects_argument() {
-    trace "Checking if '$opt' expects an argument."
+    trace "Checking if an argument is expected."
     if [[ -n "${opts_arg[$index]}" ]]; then
       trace "Argument '${opts_arg[$index]}' expected."
       return $EX_OK
@@ -689,291 +758,218 @@ function parse_opts() {
   }
   function set_option_variable() {
     trace "Set argument for '${opts_var[$index]}'."
-    if [[ ! $opt =~ ^\s*(${opts_short[$index]}|${opts_long[$index]})\s*(.*)$ ]]; then
-      fatal "Could not match '$opt' with the selected option."
+    local val="$1"
+    if [[ -z "$val" ]]; then
+      if [[ ! $opt =~ ^\s*(${opts_short[$index]}|${opts_long[$index]})\s*(.*)$ ]]; then
+        fatal "Could not match '$opt' with the selected option."
+      fi
+      val="${BASH_REMATCH[2]}"
     fi
-    local arg="${BASH_REMATCH[2]}"
     local var="${opts_var[$index]}"
-    eval "$var="$arg""
+    debug "Set '$var' to '$val'"
+    eval "$var=\"$val\""
     return $EX_OK
+  }
+  function arg_left_in_opt_str() {
+    trace 'Checking if the required argument is in the remaining string.'
+    if [[ -z "$opt_str" ]]; then
+      trace 'No remaining argument in string.'
+      return $EX_ERR
+    fi
+    trace "Found '$opt_str'."
+    return $EX_OK
+  }
+  function find_index() {
+    trace "Finding index to option '$opt'."
+    for index in "${!opts_short[@]}"; do
+      local short="${opts_short[$index]}"
+      local long="${opts_long[$index]}"
+      if [[ $opt =~ ^\s*($short|$long)$ ]]; then
+        trace "Found option at index $index."
+        return $EX_OK
+      fi
+    done
+    warn 'Did not find index.'
+    return $EX_ERR
   }
 
   # Do it
   trace "Parsing options."
   local -a args_old=("$@")
-  local -a args=("$@")
-  local opt
-  for opt in "${args[@]}"; do
+  local opt_str
+  local last_opt
+  for opt_str in "$@"; do
+    trace "Checking string '$opt_str'."
+    if [[ -n "$last_opt" ]]; then
+      trace "Deduced to be argument for '$last_opt'."
+      opt="$last_opt"
+      last_opt=""
+      find_index
+      set_option_variable "$opt_str"
+      continue
+    fi
     local -i index
-    find_matching_opt
-    if (( $index >= 0 )); then
-      # Option found
+    local opt=""
+    local ignore=""
+    # Does the string start with an option?
+    while find_matching_opt; do
       if expects_argument; then
-        set_option_variable
-      else
-        niy
-      fi
-    else
-      # Argument found
-      niy
-    fi
-  done
-
-
-  local last_opt_name
-  for opt in "${args[@]}"; do
-    # If the string starts with only one dash/plus, 
-    if [[ $opt =~ ^([^a-zA-Z0-9_\-][^-]).+$ ]]; then
-      debug "Need to split the arguments($opt)."
-      local cur_opt="${BASH_REMATCH[1]}"
-      opt="-${opt:2:${#opt}}"
-      if check_if_arg "$cur_opt"; then
-        # Assign rest of string as argument.
-        if [[ -z "$opt" ]]; then
-          # Argument isn't on this string.
-          local opt_var
-          get_opt_var $opt
-          last_opt_name="$opt_var"
-          continue
+        if arg_left_in_opt_str; then
+          set_option_variable "$opt_str"
+          ignore=true
+          break
         else
-          niy
+          set_option_variable true
+          last_opt="$opt"
+          break
         fi
-      fi
-      while true; do
-        return
-      done
-    fi
-  done
-  return $EX_OK
-
-
-  local IFS=","
-  debug "Arguments supplied: '${args[*]}'" 
-  subtitute_long
-  debug "Arguments after shortening: '${args[*]}'" 
-  local opt
-  while command -p getopts "$opts" opt ${args[@]}; do
-    echo "$opt" $OPTIND $OPTARG
-    debug "Checking option '$opt'"
-    local optname="opt_$opt"
-    eval "$optname=1"
-    if [[ $opts_new =~ $opt: ]]; then # Argument provided
-      eval "$opt="${OPTARG}""
-      debug "Found option '$optname=$opt'."
-    else
-      debug "Found option '$opt'."
-    fi
-  done
-  return $EX_OK
-}
-
-
-function assign_opt_val() {
-  local opt="$1"
-  local val="$2"
-  local -i index
-  if [[ ${#opt} = 2 ]]; then
-    for index in "${!opts_short[@]}"; do
-      if [[ "${opts_short[$index]}" = "$short" ]]; then
-        
-        break
+      else
+        # Not an argument but might be another option
+        set_option_variable true
+        opt_str="-$opt_str"
+        ignore=true
       fi
     done
-  else
-    niy
-  fi
-}
-
-function get_opt_var() {
-  opt_var="opt_${${${1/^-/}/^-/}/-/_}"
-}
-
-function check_if_arg() {
-  trace "Check if short option expects an argument or not."
-  local short="$1"
-  for index in "${!opts_short[@]}"; do
-    if [[ "${opts_short[$index]}" = "$short" ]]; then
-      if [[ -n "${opts_arg[$index]}" ]]; then
-        trace "It does expect an argument."
-        return $EX_OK;
-      fi
-      break
+    # No more options in the current opt_str
+    if [[ -z "$ignore" ]] && [[ -n "$opt_str" ]]; then
+      debug "Adding '$opt_str' to 'args'."
+      args+=("$opt_str")
     fi
   done
-  trace "It does not expect an argument."
-  return $EX_ERR
-}
-
-function parse_single_option() {
-  local flag="$1"
-  local argument="$2"
-  trace "Parsing single option: $1 $2"
-  local -i index
-  if [[ ${#flag} = 1 ]]; then
-    for index in "${!opts_short[@]}"; do
-      if [[ "${opts_short[$index]}" = "$flag" ]]; then
-        return
-      fi
-    done
-  else
-    return
-  fi
-}
-function assign_option() {
-  local -i index="$1"
-  local short="${opts_short[$index]}"
-  local long="${opts_long[$index]}"
-  local argument="$2"
-  if [[ -n "$short" ]]; then
-    local name_short="opt_$short"
-  fi
-}
-
-function subtitute_long() {
-  trace 'Substituting long options to short ones.'
-  local -i index
-  local key
-  for key in "${!option_map[@]}"; do
-    for index in "${!args[@]}"; do
-    local arg="${args[$index]}"
-      if [[ $arg =~ ^--$key(\s.*$|$) ]]; then
-        local shortened="-${option_map[$key]}${BASH_REMATCH[1]}"
-        args[$index]="$shortened"
-        debug "Changed option '$arg' to '$shortened'."
-      fi
-    done
-  done
-  trace 'Done with the substitution.'
-  return $EX_OK
-}
-
-function prefetch_options() {
-  if [[ $opts =~ $DEFAULT_OPTS.* ]]; then
-    # Parsing options early
-    if test_option "$@" 'h'; then 
-      print_help
-      exit $EX_OK
-    fi
-    if test_option "$@" 'q'; then
-      loglevel=$LL_QUIET
-    elif test_option "$@" 'v'; then
-      loglevel=$LL_TRACE
-      debug "Set log level to $loglevel."
-    elif test_option "$@" 'l\ *([0-9]*)'; then
-      loglevel=${BASH_REMATCH[1]}
-    fi
-    if [[ $loglevel -ne $LL_QUIET ]]; then
-      debug "Set log level to $loglevel"
-    fi
-    if [[ -z "$trapping" ]]; then
-      trap_signals
-    fi
-  fi
+  trace "Done parsing options."
   return $EX_OK
 }
 
 ##
-# Prints the usage and help text.
+# Prints the VERSION of the script.
 # Globals:
-#   opts
-#   DEFAULT_OPTS
+#   NAME
+#   USAGE
+#   SYNTAX
+#   VERSION
+#   DESCRIPTION
+#   opts_var
+#   opts_short
+#   opts_long
+#   opts_arg
+#   opts_help
+#   max_len_long
+#   max_len_arg
 # Arguments:
-#   The script arguments ($@)
+#   None
 # Returns:
 #   None
 #
-function print_help() {
+function print_usage() {
+  trace "Printing USAGE."
+  function pad_right() {
+    local -i len=$1
+    local str="$2"
+    local str="$2"
+    printf "%*s" "$((len - ${#str}))" "$pad"
+    printf '%s' "$str"
+  }
+  function pad_left() {
+    local -i len=$1
+    local str="$2"
+    printf '%s' "$str"
+    printf "%*.${len}s" "$((len - ${#str}))" "$pad"
+  }
+  echo "$NAME -- $VERSION"
   echo -n 'Usage: '
-  for syn in "${syntax[@]}"; do
+  local syn
+  for syn in "${SYNTAX[@]}"; do
     echo "$(basename $0) $syn"
     echo -n '       '
   done
-  echo -en '\033[7D'
-  echo "$usage"
+  echo -en '\033[7D' # Override the spaces
+  echo "$USAGE"
   echo
-  for option in "${optArray[@]}"; do
-    get_opt "$option"
+  local -i index
+  for index in "${!opts_help[@]}"; do
+    local short="${opts_short[$index]}"
+    local long="${opts_long[$index]}"
+    local argument="${opts_arg[$index]}"
+    local helptext="${opts_help[$index]}"
     if [[ -n "$short" ]]; then
-      echo -n "  -$short"
       if [[ -n "$long" ]]; then
-        echo -n ','
+        pad_right 6 "$short, "
       else
-        echo -n ' '
+        pad_right 6 "$short  "
       fi
     else
-      echo -en '     '
+      pad_right 6
     fi
-    if [[ -n "$long" ]]; then
-      line=" --$long"
-      if [[ -n "$argument" ]]; then
-        line="$line $argument"
-      fi
-      let "len = $maxlen - ${#line} + 1"
-      echo -en "$line "
-      printf ' %.0s' {1..$len}
-    else
-      printf ' %.0s' {1..$maxlen}
-    fi
-    echo -e "$descr"
+    pad_left "$((max_len_long + 1))" "$long"
+    pad_left "$((max_len_arg + 2))" "$argument"
+    printf '%s' "$helptext"
+    echo
   done
+  echo
+  echo "$DESCRIPTION"
   return $EX_OK
 }
 
-function test_option() {
-  [[ \ $1 =~  \ -[a-zA-Z0-9]*$2 ]] && return $EX_OK;
-  return $EX_ERR;
+##
+# Prints the VERSION of the script.
+# Globals:
+#   NAME
+#   VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+function print_version() {
+  echo "$NAME version $VERSION"
 }
 
 
+# setterm --term linux --back green --fore black --clear all
+TODO "Check for 'setterm'."
 
 ###############################################################################
 #                                     EOF                                     #
 ###############################################################################
+# Basic settings
+loglevel=$LL_INFO
 
 # Setup:
-loglevel=$LL_TRACE
-
-define_opt "_log" "-l" "" "<n>" "Log level <n>."
-define_opt "_help" "-h" "--help" "" "Display this help text."
-define_opt "_ver" "-v" "" "" "Display the version."
-define_opt "_file" "" "--file" "<file>" "Load settings from <file>."
-
-syntax=(
-  '[OPTION]...'
-  '[OPTION]... [FILE]'
+NAME='Bash me'
+VERSION='v0.1'
+USAGE='Provides nice features for bash scripting.'
+SYNTAX=(
+  '[OPTION]...    Execute script with arguments.'
 )
-usage='Remove (unlink) the FILE(s).'
-
-parse_opts "$@"
-echo "_log = $_log"
-exit
-
-# Traps:
-traps=(
-  ERR
-  INT
+define_opt '_log' '-l' '' 'n' 'Log level n.'
+define_opt '_help' '-h' '--help' '' 'Display this help text.'
+define_opt '_ver' '-v' '' '' 'Display the VERSION.'
+define_opt '_file' '' '--output' 'file' "Write log to file(defaults to $logfile)."
+DESCRIPTION=$(cat <<EOF
+This is an example configuration to use the Bash-me script.
+You can add a licence if you want.
+EOF
 )
-sig_err() { exit; }
-sig_int() { exit; }
+
+# Parse arguments
+parse_args "$@"
+
+# Process options
+[[ -n "$_help" ]] || [[ -z ${BASH_ARGC[@]} ]] && print_usage && exit
+[[ -n "$_log" ]] && loglevel="$_log"
+[[ -n "$_ver" ]] && print_version && exit
+[[ -n "$_file" ]] && logfile="$_file"
+[[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
+
+# Setup traps
+sig_err() {
+  error "Well, I guess something went wrong."
+  exit;
+}
+sig_int() {
+  error "Bye bye."
+  exit;
+}
 trap_signals
 
-color_test
-exit
-# Code
-sig_debug() {
-    local -i row="$((${BASH_LINENO[0]} - 3))"
-    local text=$(sed "${row}q;d" "$(basename $0)")
-    debug "$row: $text"
-    read;
-}
-trap_sig DEBUG ''
-echo "$LINENO"
-echo "$LINENO"
-echo "a = $a"
-if type setterm &>/dev/null; then
-  read
-  setterm --term linux --back green --fore black --clear all
-fi
-while true; do
-  ls &> /dev/null
-done
+# ... Code ...

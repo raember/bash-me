@@ -1,6 +1,56 @@
 # bash-me
 Trying to make a reusable bash template
 
+### Example
+Here is an example of how to use the script:
+```sh
+# ...Header
+. bashme
+
+# Basic settings
+loglevel=$LL_INFO
+
+# Setup:
+NAME='Bash me'
+VERSION='v0.1'
+USAGE='Provides nice features for bash scripting.'
+SYNTAX=(
+  '[OPTION]...    Execute script with arguments.'
+)
+define_opt '_log'  '-l' ''         'n'    'Log level n.'
+define_opt '_help' '-h' '--help'   ''     'Display this help text.'
+define_opt '_ver'  '-v' ''         ''     'Display the VERSION.'
+define_opt '_file' ''   '--output' 'file' "Write log to file(defaults to $logfile)."
+DESCRIPTION=$(cat <<EOF
+This is an example configuration to use the Bash-me script.
+You can add a licence if you want.
+EOF
+)
+
+# Parse arguments
+parse_args "$@"
+
+# Process options
+[[ -n "$_help" ]] || [[ -z ${BASH_ARGC[@]} ]] && print_usage && exit
+[[ -n "$_log" ]] && loglevel="$_log"
+[[ -n "$_ver" ]] && print_version && exit
+[[ -n "$_file" ]] && logfile="$_file"
+[[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
+
+# Setup traps
+sig_err() {
+  error "Well, I guess something went wrong."
+  exit;
+}
+sig_int() {
+  error "Bye bye."
+  exit;
+}
+trap_signals
+
+# ... Code ...
+```
+
 ## Logging
 Logging with the popular log levels is supported as follows:
 * `trace` (Logging level 0: `loglevel=$LL_TRACE`)
@@ -16,6 +66,10 @@ To write the logs to a log file, the variable `log2file` can be set. The logs wi
 If desired, the logfile name can be changed via the `logfile` variable.
 
 To disable logging to `stdout`/`stderr`, the variable `log2std` can be cleared.
+
+To further improve writing scripts, there are 2 additional commands:
+* `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_FATAL` level.
+* `TODO`: Marks a point in the code as a TODO. Logs on the `LL_INFO` level.
 
 ## Return values
 Constants for the commonly used exit codes according to [tldp.org](http://www.tldp.org/LDP/abs/html/exitcodes.html#EXITCODESREF "Appendix E. Exit Codes With Special Meanings"):
@@ -41,7 +95,7 @@ else
     echo "faulty execution"
 fi
 ```
-Or one could use the `case` clause to further evaluate a return value.
+Or one could use the `case` clause to further evaluate the return value.
 
 Keep in mind that the checking of unknown return values logs messages on the `$LL_WARN` level.
 
@@ -81,6 +135,7 @@ Keep in mind that to use those in an `echo` command, the `-e` flag is mandatory.
 
 To test the available formatting capabilities, test them with the following commands:
 * `formatting_test`: Writes a table with all the available formattings.
+* `color_test`: Writes a table with all the available colors.
 
 ## Trapping signals
 The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html):
@@ -88,7 +143,7 @@ The script predefines traps for all signals defined in [signal.h](http://pubs.op
 | --- | --- | --- | --- |
 | EXIT | Terminate | Exit script. | `sig_exit` |
 | ERR | Terminate | Error occurred. | `sig_err` |
-| DEBUG | Ignore | Debug cmd before every statement. | * |
+| DEBUG | Ignore | Debug cmd before every statement. | `sig_debug` |
 | RETURN | Ignore | After a function or a script got sourced. | `sig_return` |
 | SIGHUP | Terminate | Hangup. | `sig_hup` |
 | SIGINT | Terminate | Terminal interrupt signal(Ctrl+C). | `sig_int` |
@@ -123,15 +178,21 @@ The script predefines traps for all signals defined in [signal.h](http://pubs.op
 
 For a better insight on their meaning, the [wiki](https://en.wikipedia.org/wiki/Signal_(IPC)) is quite helpful with that.
 
-*= To use the DEBUG-pseudo-signal, one has to setup the trap by oneself. Example:
+Example method for debug trap callback:
 ```sh
 sig_debug() {
-    local -i row="$((${BASH_LINENO[0]} - 3))"
-    local text=$(sed "${row}q;d" "$(basename $0)")
-    debug "$row: $text"
-    read;
+  local -i row="$((${BASH_LINENO[0]} - 3))"
+  local text=$(sed "${row}q;d" "$(basename $0)")
+  debug "Next: ($row) $text"
+  read
+  while : ; do
+    local answer
+    read -e answer
+    [[ -z $answer ]] && break
+    history -s "$answer"
+    eval "$answer"
+  done
 }
-trap_sig DEBUG ''
 ```
 This displays the the row number and the code on that row which is about to be executed after hitting `[ENTER]`.
 
@@ -148,7 +209,7 @@ traps=()
 # Recreate
 traps=(
     USR1
-    USR2
+    SIGUSR2
 )
 # Or add new traps:
 traps+=(EXIT)
@@ -165,14 +226,21 @@ trap_sig INT '-'
 ```
 
 ## Option parsing
-To parse options, run the `parse_opts` command with the `getopts`-argument. Example:
+To define an option, use the `define_opt` command:
+```sh
+#          variable shrt long       argument description
+define_opt '_log'   '-l' ''         'n'      'Log level n.'
+define_opt '_help'  '-h' '--help'   ''       'Display this help text.'
+define_opt '_ver'   '-v' ''         ''       'Display the VERSION.'
+define_opt '_file'  ''   '--output' 'file'   "Write log to file(defaults to $logfile)."
+```
+One can also use options such as `+test`.
+
+The remaining, plain arguments parsed can be found in the `args`-array.
+
+To parse options, run the `parse_args` command with the `getopts`-argument. Example:
 ```sh
 # Parses the argument list for h-, f-(with argument) and l-flags:
-parse_opts "hf:l"
+parse_args "$@"
 ```
-To specify long arguments, add the mapping to the `option_map`-array:
-```sh
-option_map+=(
-    [help]=h
-)
-```
+After this, the binary options have a `true` in their variable, whereas others have the value of the argument to that option.
