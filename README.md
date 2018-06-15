@@ -101,6 +101,7 @@ Keep in mind that the checking of unknown return values logs messages on the `$L
 
 ## Colors and formatting
 To make formatting easier, here are some constants to use while formatting strings:
+
 | Effect | Foreground | Background |
 | --- | --- | --- |
 | default | `fg_default` | `bg_default` |
@@ -139,6 +140,7 @@ To test the available formatting capabilities, test them with the following comm
 
 ## Trapping signals
 The script predefines traps for all signals defined in [signal.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html):
+
 | Signal | Default behaviour | Description | Command |
 | --- | --- | --- | --- |
 | EXIT | Terminate | Exit script. | `sig_exit` |
