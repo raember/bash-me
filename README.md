@@ -280,3 +280,10 @@ The following variables can be set on script startup to define the parameters fo
 * `EXPLANATION`: The use of the program. Can be formatted.
 * `USAGE`: The allowed syntaxes to call the program. Can be formatted.
 * `DESCRIPTION`: Additional remarks for the end of the help text. Can be formatted.
+
+## Data types
+### Stack
+To declare a stack variable, the `declare_stack` function can be used. It allocates an array to the stack variable and declares a stack pointer(the variable has the suffix `_i` and should not be altered). Now, the following functions can be used on that stack variable:
+* `push <stack> <value>`: Push a value to the stack.
+* `pop <stack> <variable>`: Pop a value from the stack. Returns `EX_ERR` if the stack is empty.
+* `peek <stack> <variable>`: Peek a value from the stack. Returns `EX_ERR` if the stack is empty.

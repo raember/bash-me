@@ -911,6 +911,96 @@ function print_version() {
 }
 
 
+###############################################################################
+#                                 DATA TYPES                                  #
+###############################################################################
+
+##
+# Declares a stack on the global scope.
+# Globals:
+#   ${1}    - The stack
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The stack variable
+# Returns:
+#   None
+#
+function declare_stack() {
+  local _stk="$1"
+  local _stk_i="${_stk}_i"
+  trace "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
+  declare -ag $_stk
+  declare -ig $_stk_i
+  eval "$_stk_i=0"
+}
+
+##
+# Pushes a value to the stack.
+# Globals:
+#   ${1}    - The stack
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The stack variable
+#   The value to push
+# Returns:
+#   None
+#
+function push() {
+  local _stk="$1"
+  local _stk_i="${_stk}_i"
+  trace "Pushing variable '$2' to stack '$_stk'."
+  eval "$_stk[\$$_stk_i]=\"$2\""
+  let "$_stk_i = $_stk_i + 1"
+}
+
+##
+# Pops a value from the stack.
+# Globals:
+#   ${1}    - The stack
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The stack variable
+# Returns:
+#   $EX_ERR if the stack is empty.
+#
+function pop() {
+  local _stk="$1"
+  local _stk_i="${_stk}_i"
+  local _val="$2"
+  if eval "(( $_stk_i < 1 ))"; then
+    debug "Stack '$_stk' is empty."
+    return $EX_ERR
+  fi
+  trace "Popping a variable from stack '$_stk'."
+  let "$_stk_i = $_stk_i - 1"
+  eval "$_val=\"\${$_stk[\$$_stk_i]}\""
+  eval "unset $_stk[\$$_stk_i]"
+}
+
+##
+# Peeks a value from the stack.
+# Globals:
+#   ${1}    - The stack
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The stack variable
+# Returns:
+#   $EX_ERR if the stack is empty.
+#
+function peek() {
+  local _stk="$1"
+  local _stk_i="${_stk}_i"
+  local _val="$2"
+  if eval "(( $_stk_i < 1 ))"; then
+    debug "Stack '$_stk' is empty."
+    return $EX_ERR
+  fi
+  trace "Peeking variable from stack '$_stk'."
+  eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
+}
+
+
+
 # setterm --term linux --back green --fore black --clear all
 TODO "Check for 'setterm'."
 
@@ -986,4 +1076,20 @@ sig_winch() {
 
 # ... Code ...
 loglevel=$LL_TRACE
-echo "$(push_format $FG_BLACK $BG_CYAN)Before ${BG_MAGENTA}during$(pop_format) and after."
+
+IFS=";"
+declare_stack stk
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
+push stk "Test"
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
+push stk "another string"
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
+peek stk value
+echo "    Peeked: $value"
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
+pop stk value
+echo "    Popped: $value"
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
+pop stk value
+echo "    Popped: $value"
+echo "Stack: '${stk[*]}', Index: '$stk_i'."
