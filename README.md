@@ -1,31 +1,53 @@
-# bash-me
-Trying to make a reusable bash template
+# Bash-me
+Bash-me is a script providing basic functionality for extended bash scripts.
 
 ### Example
 Here is an example of how to use the script:
 ```sh
-# ...Header
+# Source the script
 . bashme
 
 # Basic settings
 loglevel=$LL_INFO
 
 # Setup:
-NAME='Bash me'
-VERSION='v0.1'
-USAGE='Provides nice features for bash scripting.'
-SYNTAX=(
+PROGRAM_NAME="${BOLD}Bash me${RESET}"
+VERSION="${FG_GREEN}v0.1${RESET}"
+YEAR=2018
+FULL_NAME="Raphael Emberger"
+LICENCE="MIT License
+
+Copyright (c) $YEAR $FULL_NAME
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."
+EXPLANATION='Provides nice features for bash scripting.'
+USAGE=(
   '[OPTION]...    Execute script with arguments.'
+  '               Show this help page.'
 )
-define_opt '_log'  '-l' ''         'n'    'Log level n.'
+define_opt '_log'  '-l' ''         'n'    "Log level ${ITALIC}n${RESET}."
 define_opt '_help' '-h' '--help'   ''     'Display this help text.'
 define_opt '_ver'  '-v' ''         ''     'Display the VERSION.'
-define_opt '_file' ''   '--output' 'file' "Write log to file(defaults to $logfile)."
-DESCRIPTION=$(cat <<EOF
+define_opt '_file' ''   '--output' 'file' "Write log to ${ITALIC}file${RESET}(defaults to $logfile)."
+DESCRIPTION="
 This is an example configuration to use the Bash-me script.
-You can add a licence if you want.
-EOF
-)
+You can add a licence if you want."
 
 # Parse arguments
 parse_args "$@"
@@ -68,7 +90,7 @@ If desired, the logfile name can be changed via the `logfile` variable.
 To disable logging to `stdout`/`stderr`, the variable `log2std` can be cleared.
 
 To further improve writing scripts, there are 2 additional commands:
-* `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_FATAL` level.
+* `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_WARN` level.
 * `TODO`: Marks a point in the code as a TODO. Logs on the `LL_INFO` level.
 
 ## Return values
@@ -104,33 +126,32 @@ To make formatting easier, here are some constants to use while formatting strin
 
 | Effect | Foreground | Background |
 | --- | --- | --- |
-| default | `fg_default` | `bg_default` |
-| black | `fg_black` | `bg_black` |
-| red | `fg_red` | `bg_red` |
-| green | `fg_green` | `bg_green` |
-| yellow | `fg_yellow` | `bg_yellow` |
-| blue | `fg_blue` | `bg_blue` |
-| magenta | `fg_magenta` | `bg_magenta` |
-| cyan | `fg_cyan` | `bg_cyan` |
-| light gray | `fg_light_gray` | `bg_light_gray` |
-| dark gray | `fg_dark_gray` | `bg_dark_gray` |
-| light red | `fg_light_red` | `bg_light_red` |
-| light green | `fg_light_green` | `bg_light_green` |
-| light yellow | `fg_light_yellow` | `bg_light_yellow` |
-| light blue | `fg_light_blue` | `bg_light_blue` |
-| light magenta | `fg_light_magenta` | `bg_light_magenta` |
-| light cyan | `fg_light_cyan` | `bg_light_cyan` |
-| white | `fg_white` | `bg_white` |
-| bold | `fnt_bold`/`fnt_no_bold` ||
-| dim | `fnt_dim`/`fnt_no_dim` ||
-| italic | `fnt_italic`/`fnt_no_italic` ||
-| underline | `fnt_underline`/`fnt_no_underline` ||
-| blink | `fnt_blink`/`fnt_no_blink` ||
-| overline | `fnt_overline`/`fnt_no_overline` ||
-| reverse | `fnt_reverse`/`fnt_no_reverse` ||
-| hidden | `fnt_hidden`/`fnt_no_hidden` ||
-| strikeout | `fnt_strikeout`/`fnt_no_strikeout` ||
-| reset | `fnt_reset` | `fnt_reset` |
+| black | `FG_BLACK` | `BG_BLACK` |
+| red | `FG_RED` | `BG_RED` |
+| green | `FG_GREEN` | `BG_GREEN` |
+| yellow | `FG_YELLOW` | `BG_YELLOW` |
+| blue | `FG_BLUE` | `BG_BLUE` |
+| magenta | `FG_MAGENTA` | `BG_MAGENTA` |
+| cyan | `FG_CYAN` | `BG_CYAN` |
+| light gray | `FG_LGRAY` | `BG_LGRAY` |
+| dark gray | `FG_GRAY` | `BG_GRAY` |
+| light red | `FG_LRED` | `BG_LRED` |
+| light green | `FG_LGREEN` | `BG_LGREEN` |
+| light yellow | `FG_LYELLOW` | `BG_LYELLOW` |
+| light blue | `FG_LBLUE` | `BG_LBLUE` |
+| light magenta | `FG_LMAGENTA` | `BG_LMAGENTA` |
+| light cyan | `FG_LCYAN` | `BG_LCYAN` |
+| white | `FG_WHITE` | `BG_WHITE` |
+| bold | `BOLD` ||
+| dim | `DIM` ||
+| italic | `ITALIC` ||
+| standout | `STANDOUT`/`STANDOUT_STOP` ||
+| underline | `UNDERLINE`/`UNDERLINE_STOP` ||
+| blink | `BLINK` ||
+| reverse | `REVERSE` ||
+| invisible | `INVISIBLE` ||
+| strikeout | `STRIKEOUT` ||
+| reset | `RESET` | `RESET` |
 
 Keep in mind that to use those in an `echo` command, the `-e` flag is mandatory.
 
@@ -238,6 +259,8 @@ define_opt '_file'  ''   '--output' 'file'   "Write log to file(defaults to $log
 ```
 One can also use options such as `+test`.
 
+The description of the option can be formatted.
+
 The remaining, plain arguments parsed can be found in the `args`-array.
 
 To parse options, run the `parse_args` command with the `getopts`-argument. Example:
@@ -246,3 +269,14 @@ To parse options, run the `parse_args` command with the `getopts`-argument. Exam
 parse_args "$@"
 ```
 After this, the binary options have a `true` in their variable, whereas others have the value of the argument to that option.
+
+## General info
+The following variables can be set on script startup to define the parameters for the help page and the version page:
+* `PROGRAM_NAME`: The name of the program. Can be formatted.
+* `VERSION`: The current version of the program. Can be formatted.
+* `YEAR`: The year when the program has been written.
+* `FULL_NAME`: The full name of the author.
+* `LICENCE`: The licence text to display. Can be formatted.
+* `EXPLANATION`: The use of the program. Can be formatted.
+* `USAGE`: The allowed syntaxes to call the program. Can be formatted.
+* `DESCRIPTION`: Additional remarks for the end of the help text. Can be formatted.

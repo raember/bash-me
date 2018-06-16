@@ -6,7 +6,7 @@
 #author         :Raphael Emberger
 #date           :20180612
 #VERSION        :0.1    
-#USAGE          :./bashme.sh
+#EXPLANATION          :./bashme.sh
 #notes          :
 #bash_version   :4.4.12(1)-release
 #==============================================================================
@@ -38,7 +38,7 @@ declare log2std=1
 #   FUNCNAME
 #   BASH_SOURCE
 #   LL_ERROR
-#   fnt_reset
+#   RESET
 #   log2std
 #   log2file
 #   logfile
@@ -56,9 +56,9 @@ function log() {
   local logmsg="$(date '+%Y-%M-%d %H:%m:%S') $3($lineno)$location$4"
   if [[ -n "$log2std" ]]; then
     if (( $2 >= $LL_ERROR )); then
-      echo -e "$1$logmsg$fnt_reset" >&2
+      echo -e "$1$logmsg$RESET" >&2
     else
-      echo -e "$1$logmsg$fnt_reset"
+      echo -e "$1$logmsg$RESET"
     fi
   fi
   [[ -n "$log2file" ]] && echo "$logmsg" >> $logfile
@@ -69,9 +69,9 @@ function log() {
 # Logs a message on the trace level.
 # Globals:
 #   LL_TRACE
+#   FG_LGRAY
+#   DIM
 #   loglevel
-#   fg_light_gray
-#   fnt_dim
 # Arguments:
 #   Log message
 # Returns:
@@ -79,7 +79,7 @@ function log() {
 #
 function trace() {
   [[ $loglevel -gt $LL_TRACE ]] && return $EX_OK
-  log "$fg_light_gray$fnt_dim" $LL_TRACE '[TRACE]' "$1"
+  log "$FG_LGRAY$DIM" $LL_TRACE '[TRACE]' "$1"
   return $EX_OK
 }
 
@@ -87,8 +87,8 @@ function trace() {
 # Logs a message on the debug level.
 # Globals:
 #   LL_DEBUG
+#   FG_LGRAY
 #   loglevel
-#   fg_light_gray
 # Arguments:
 #   Log message
 # Returns:
@@ -96,7 +96,7 @@ function trace() {
 #
 function debug() {
   [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
-  log "$fg_light_gray" $LL_DEBUG '[DEBUG]' "$1"
+  log "$FG_LGRAY" $LL_DEBUG '[DEBUG]' "$1"
   return $EX_OK
 }
 
@@ -104,8 +104,8 @@ function debug() {
 # Logs a message on the info level.
 # Globals:
 #   LL_INFO
+#   FG_WHITE
 #   loglevel
-#   fg_default
 # Arguments:
 #   Log message
 # Returns:
@@ -113,7 +113,7 @@ function debug() {
 #
 function info() {
   [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
-  log "$fg_default" $LL_INFO '[INFO] ' "$1"
+  log "$FG_WHITE" $LL_INFO '[INFO] ' "$1"
   return $EX_OK
 }
 
@@ -121,8 +121,8 @@ function info() {
 # Logs a message on the warn level.
 # Globals:
 #   LL_WARN
+#   FG_YELLOW
 #   loglevel
-#   fg_yellow
 # Arguments:
 #   Log message
 # Returns:
@@ -130,7 +130,7 @@ function info() {
 #
 function warn() {
   [[ $loglevel -gt $LL_WARN ]] && return $EX_OK
-  log "$fg_yellow" $LL_WARN '[WARN] ' "$1"
+  log "$FG_YELLOW" $LL_WARN '[WARN] ' "$1"
   return $EX_OK
 }
 
@@ -138,8 +138,8 @@ function warn() {
 # Logs a message on the error level.
 # Globals:
 #   LL_ERROR
+#   FG_RED
 #   loglevel
-#   fg_red
 # Arguments:
 #   Log message
 # Returns:
@@ -147,7 +147,7 @@ function warn() {
 #
 function error() {
   [[ $loglevel -gt $LL_ERROR ]] && return $EX_OK
-  log "$fg_red" $LL_ERROR '[ERROR]' "$1"
+  log "$FG_RED" $LL_ERROR '[ERROR]' "$1"
   return $EX_OK
 }
 
@@ -155,8 +155,8 @@ function error() {
 # Logs a message on the fatal level.
 # Globals:
 #   LL_FATAL
+#   FG_RED
 #   loglevel
-#   fg_red
 # Arguments:
 #   Log message
 # Returns:
@@ -164,7 +164,7 @@ function error() {
 #
 function fatal() {
   [[ $loglevel -gt $LL_FATAL ]] && return $EX_OK
-  log "$fg_light_red$fnt_bold" $LL_FATAL '[FATAL]' "$1"
+  log "$FG_LRED$BOLD" $LL_FATAL '[FATAL]' "$1"
   return $EX_OK
 }
 
@@ -172,17 +172,22 @@ function fatal() {
 # A makeshift function to cover logging the access to not yet implemented.
 # functionality.
 # Globals:
-#   LL_FATAL
+#   LL_WARN
+#   FG_LYELLOW
+#   BOLD
 #   loglevel
-#   fg_light_red
-#   fnt_bold
 # Arguments:
 #   None
 # Returns:
 #   None
 #
 function NYI() {
-  fatal "Not implemented yet!"
+  function log_nyi() {
+    [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
+    log "$FG_LYELLOW$BOLD" $LL_WARN '[TODO]' "$1"
+    return $EX_OK
+  }
+  log_nyi "Not yet implemented!"
   return $EX_OK
 }
 
@@ -190,9 +195,9 @@ function NYI() {
 # Marks a position in the code as a TODO.
 # Globals:
 #   LL_INFO
+#   FG_GREEN
+#   BOLD
 #   loglevel
-#   fg_green
-#   fnt_bold
 # Arguments:
 #   The description of the work to be done.
 # Returns:
@@ -201,7 +206,7 @@ function NYI() {
 function TODO() {
   function log_todo() {
     [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
-    log "$fg_green$fnt_bold" $LL_INFO '[TODO]' "$1"
+    log "$FG_GREEN$BOLD" $LL_INFO '[TODO]' "$1"
     return $EX_OK
   }
   log_todo "$1"
@@ -281,86 +286,67 @@ function check_retval() {
 #                            COLORS AND FORMATTING                            #
 ###############################################################################
 # Constants
-readonly fg_default='\033[39m'
-readonly fg_black='\033[30m'
-readonly fg_red='\033[31m'
-readonly fg_green='\033[32m'
-readonly fg_yellow='\033[33m'
-readonly fg_blue='\033[34m'
-readonly fg_magenta='\033[35m'
-readonly fg_cyan='\033[36m'
-readonly fg_light_gray='\033[37m'
-readonly fg_dark_gray='\033[90m'
-readonly fg_light_red='\033[91m'
-readonly fg_light_green='\033[92m'
-readonly fg_light_yellow='\033[93m'
-readonly fg_light_blue='\033[94m'
-readonly fg_light_magenta='\033[95m'
-readonly fg_light_cyan='\033[96m'
-readonly fg_white='\033[97m'
+readonly FG_BLACK="$(tput setaf 0)"
+readonly FG_RED="$(tput setaf 1)"
+readonly FG_GREEN="$(tput setaf 2)"
+readonly FG_YELLOW="$(tput setaf 3)"
+readonly FG_BLUE="$(tput setaf 4)"
+readonly FG_MAGENTA="$(tput setaf 5)"
+readonly FG_CYAN="$(tput setaf 6)"
+readonly FG_LGRAY="$(tput setaf 7)"
+readonly FG_GRAY="$(tput setaf 8)"
+readonly FG_LRED="$(tput setaf 9)"
+readonly FG_LGREEN="$(tput setaf 10)"
+readonly FG_LYELLOW="$(tput setaf 11)"
+readonly FG_LBLUE="$(tput setaf 12)"
+readonly FG_LMAGENTA="$(tput setaf 13)"
+readonly FG_LCYAN="$(tput setaf 14)"
+readonly FG_WHITE="$(tput setaf 15)"
 
-readonly bg_default='\033[49m'
-readonly bg_black='\033[40m'
-readonly bg_red='\033[41m'
-readonly bg_green='\033[42m'
-readonly bg_yellow='\033[43m'
-readonly bg_blue='\033[44m'
-readonly bg_magenta='\033[45m'
-readonly bg_cyan='\033[46m'
-readonly bg_light_gray='\033[47m'
-readonly bg_dark_gray='\033[100m'
-readonly bg_light_red='\033[101m'
-readonly bg_light_green='\033[102m'
-readonly bg_light_yellow='\033[103m'
-readonly bg_light_blue='\033[104m'
-readonly bg_light_magenta='\033[105m'
-readonly bg_light_cyan='\033[106m'
-readonly bg_white='\033[107m'
+readonly BG_BLACK="$(tput setab 0)"
+readonly BG_RED="$(tput setab 1)"
+readonly BG_GREEN="$(tput setab 2)"
+readonly BG_YELLOW="$(tput setab 3)"
+readonly BG_BLUE="$(tput setab 4)"
+readonly BG_MAGENTA="$(tput setab 5)"
+readonly BG_CYAN="$(tput setab 6)"
+readonly BG_LGRAY="$(tput setab 7)"
+readonly BG_GRAY="$(tput setab 8)"
+readonly BG_LRED="$(tput setab 9)"
+readonly BG_LGREEN="$(tput setab 10)"
+readonly BG_LYELLOW="$(tput setab 11)"
+readonly BG_LBLUE="$(tput setab 12)"
+readonly BG_LMAGENTA="$(tput setab 13)"
+readonly BG_LCYAN="$(tput setab 14)"
+readonly BG_WHITE="$(tput setab 15)"
 
-readonly fnt_bold='\033[1m'
-readonly fnt_dim='\033[2m'
-readonly fnt_italic='\033[3m'
-readonly fnt_underline='\033[4m'
-readonly fnt_blink='\033[5m'
-readonly fnt_overline='\033[6m'
-readonly fnt_reverse='\033[7m'
-readonly fnt_hidden='\033[8m'
-readonly fnt_strikeout='\033[9m'
+readonly BOLD="$(tput bold)"
+readonly DIM="$(tput dim)"
+readonly ITALIC="$(tput sitm)"
+readonly STANDOUT="$(tput smso)"
+readonly STANDOUT_STOP="$(tput rmso)"
+readonly UNDERLINE="$(tput smul)"
+readonly UNDERLINE_STOP="$(tput rmul)"
+readonly BLINK="$(tput blink)"
+readonly REVERSE="$(tput rev)"
+readonly INVISIBLE="$(tput invis)"
+readonly STRIKEOUT="$(tput os)"
 
-readonly fnt_no_bold='\033[21m'
-readonly fnt_no_dim='\033[22m'
-readonly fnt_no_italic='\033[23m'
-readonly fnt_no_underline='\033[24m'
-readonly fnt_no_blink='\033[25m'
-readonly fnt_no_overline='\033[26m'
-readonly fnt_no_reverse='\033[27m'
-readonly fnt_no_hidden='\033[28m'
-readonly fnt_no_strikeout='\033[29m'
-
-readonly fnt_reset='\033[0m'
+readonly RESET="$(tput sgr0)"
 
 ##
 # Prints a table of all the available formats.
 # Globals:
-#   fnt_bold
-#   fnt_dim
-#   fnt_italic
-#   fnt_underline
-#   fnt_blink
-#   fnt_overline
-#   fnt_reverse
-#   fnt_hidden
-#   fnt_strikeout
-#   fnt_no_bold
-#   fnt_no_dim
-#   fnt_no_italic
-#   fnt_no_underline
-#   fnt_no_blink
-#   fnt_no_overline
-#   fnt_no_reverse
-#   fnt_no_hidden
-#   fnt_no_strikeout
-#   fnt_reset
+#   BOLD
+#   DIM
+#   ITALIC
+#   UNDERLINE
+#   BLINK
+#   REVERSE
+#   INVISIBLE
+#   STRIKEOUT
+#   UNDERLINE_STOP
+#   RESET
 # Arguments:
 #   None
 # Returns:
@@ -368,56 +354,55 @@ readonly fnt_reset='\033[0m'
 #
 function formatting_test() {
   trace 'Printing formatting table.'
-  echo -e "Bold:      ${fnt_bold}Bold${fnt_no_bold}.      No Bold${fnt_reset}."
-  echo -e "Dim:       ${fnt_dim}Dim${fnt_no_dim}.       No Dim${fnt_reset}."
-  echo -e "Italic:    ${fnt_italic}Italic${fnt_no_italic}.    No Italic${fnt_reset}."
-  echo -e "Underline: ${fnt_underline}Underline${fnt_no_underline}. No Underline${fnt_reset}."
-  echo -e "Blink:     ${fnt_blink}Blink${fnt_no_blink}.     No Blink${fnt_reset}."
-  echo -e "Overline:  ${fnt_overline}Overline${fnt_no_overline}.  No Overline${fnt_reset}."
-  echo -e "Reverse:   ${fnt_reverse}Reverse${fnt_no_reverse}.   No Reverse${fnt_reset}."
-  echo -e "Hidden:    ${fnt_hidden}Hidden${fnt_no_hidden}.    No Hidden${fnt_reset}."
-  echo -e "Strikeout: ${fnt_strikeout}Strikeout${fnt_no_strikeout}. No Strikeout${fnt_reset}."
+  echo -e "Formattings:"
+  echo -e "BOLD:      ${BOLD}BOLD${RESET}."
+  echo -e "DIM:       ${DIM}DIM${RESET}."
+  echo -e "ITALIC:    ${ITALIC}ITALIC${RESET}."
+  echo -e "UNDERLINE: ${UNDERLINE}UNDERLINE${UNDERLINE_STOP}."
+  echo -e "STANDOUT:  ${STANDOUT}STANDOUT${STANDOUT_STOP}."
+  echo -e "BLINK:     ${BLINK}BLINK${RESET}."
+  echo -e "REVERSE:   ${REVERSE}REVERSE${RESET}."
+  echo -e "INVISIBLE: ${INVISIBLE}INVISIBLE${RESET}."
+  echo -e "STRIKEOUT: ${STRIKEOUT}STRIKEOUT${RESET}."
   return $EX_OK
 }
 
 ##
 # Prints a table of all the available colors.
 # Globals:
-#   fg_default
-#   fg_black
-#   fg_red
-#   fg_green
-#   fg_yellow
-#   fg_blue
-#   fg_magenta
-#   fg_cyan
-#   fg_light_gray
-#   fg_dark_gray
-#   fg_light_red
-#   fg_light_green
-#   fg_light_yellow
-#   fg_light_blue
-#   fg_light_magenta
-#   fg_light_cyan
-#   fg_white
-#   bg_default
-#   bg_black
-#   bg_red
-#   bg_green
-#   bg_yellow
-#   bg_blue
-#   bg_magenta
-#   bg_cyan
-#   bg_light_gray
-#   bg_dark_gray
-#   bg_light_red
-#   bg_light_green
-#   bg_light_yellow
-#   bg_light_blue
-#   bg_light_magenta
-#   bg_light_cyan
-#   bg_white
-#   fnt_reset
+#   FG_BLACK
+#   FG_RED
+#   FG_GREEN
+#   FG_YELLOW
+#   FG_BLUE
+#   FG_MAGENTA
+#   FG_CYAN
+#   FG_LGRAY
+#   FG_GRAY
+#   FG_LRED
+#   FG_LGREEN
+#   FG_LYELLOW
+#   FG_LBLUE
+#   FG_LMAGENTA
+#   FG_LCYAN
+#   FG_WHITE
+#   BG_BLACK
+#   BG_RED
+#   BG_GREEN
+#   BG_YELLOW
+#   BG_BLUE
+#   BG_MAGENTA
+#   BG_CYAN
+#   BG_LGRAY
+#   BG_GRAY
+#   BG_LRED
+#   BG_LGREEN
+#   BG_LYELLOW
+#   BG_LBLUE
+#   BG_LMAGENTA
+#   BG_LCYAN
+#   BG_WHITE
+#   RESET
 # Arguments:
 #   None
 # Returns:
@@ -426,41 +411,39 @@ function formatting_test() {
 function color_test() {
   trace 'Printing color table.'
   echo -e "Foreground:"
-  echo -e  "fg_default:    ${fg_default}fg_default${fnt_reset}"
-  echo -en "fg_black:      ${fg_black}fg_black${fnt_reset}      "
-  echo -e  "fg_dark_gray:     ${fg_dark_gray}fg_dark_gray${fnt_reset}"
-  echo -en "fg_red:        ${fg_red}fg_red${fnt_reset}        "
-  echo -e  "fg_light_red:     ${fg_light_red}fg_light_red${fnt_reset}"
-  echo -en "fg_green:      ${fg_green}fg_green${fnt_reset}      "
-  echo -e  "fg_light_green:   ${fg_light_green}fg_light_green${fnt_reset}"
-  echo -en "fg_yellow:     ${fg_yellow}fg_yellow${fnt_reset}     "
-  echo -e  "fg_light_yellow : ${fg_light_yellow}fg_light_yellow${fnt_reset}"
-  echo -en "fg_blue:       ${fg_blue}fg_blue${fnt_reset}       "
-  echo -e  "fg_light_blue:    ${fg_light_blue}fg_light_blue${fnt_reset}"
-  echo -en "fg_magenta:    ${fg_magenta}fg_magenta${fnt_reset}    "
-  echo -e  "fg_light_magenta: ${fg_light_magenta}fg_light_magenta${fnt_reset}"
-  echo -en "fg_cyan:       ${fg_cyan}fg_cyan${fnt_reset}       "
-  echo -e  "fg_light_cyan:    ${fg_light_cyan}fg_light_cyan${fnt_reset}"
-  echo -en "fg_light_gray: ${fg_light_gray}fg_light_gray${fnt_reset} "
-  echo -e  "fg_white:         ${fg_white}fg_white${fnt_reset}"
+  echo -en "FG_BLACK:      ${FG_BLACK}FG_BLACK${RESET}      "
+  echo -e  "FG_GRAY:     ${FG_GRAY}FG_GRAY${RESET}"
+  echo -en "FG_RED:        ${FG_RED}FG_RED${RESET}        "
+  echo -e  "FG_LRED:     ${FG_LRED}FG_LRED${RESET}"
+  echo -en "FG_GREEN:      ${FG_GREEN}FG_GREEN${RESET}      "
+  echo -e  "FG_LGREEN:   ${FG_LGREEN}FG_LGREEN${RESET}"
+  echo -en "FG_YELLOW:     ${FG_YELLOW}FG_YELLOW${RESET}     "
+  echo -e  "FG_LYELLOW : ${FG_LYELLOW}FG_LYELLOW${RESET}"
+  echo -en "FG_BLUE:       ${FG_BLUE}FG_BLUE${RESET}       "
+  echo -e  "FG_LBLUE:    ${FG_LBLUE}FG_LBLUE${RESET}"
+  echo -en "FG_MAGENTA:    ${FG_MAGENTA}FG_MAGENTA${RESET}    "
+  echo -e  "FG_LMAGENTA: ${FG_LMAGENTA}FG_LMAGENTA${RESET}"
+  echo -en "FG_CYAN:       ${FG_CYAN}FG_CYAN${RESET}       "
+  echo -e  "FG_LCYAN:    ${FG_LCYAN}FG_LCYAN${RESET}"
+  echo -en "FG_LGRAY: ${FG_LGRAY}FG_LGRAY${RESET} "
+  echo -e  "FG_WHITE:         ${FG_WHITE}FG_WHITE${RESET}"
   echo -e "Background:"
-  echo -e  "bg_default:    ${bg_default}bg_default${fnt_reset}"
-  echo -en "bg_black:      ${bg_black}bg_black${fnt_reset}      "
-  echo -e  "bg_dark_gray:     ${bg_dark_gray}bg_dark_gray${fnt_reset}"
-  echo -en "bg_red:        ${bg_red}bg_red${fnt_reset}        "
-  echo -e  "bg_light_red:     ${bg_light_red}bg_light_red${fnt_reset}"
-  echo -en "bg_green:      ${bg_green}bg_green${fnt_reset}      "
-  echo -e  "bg_light_green:   ${bg_light_green}bg_light_green${fnt_reset}"
-  echo -en "bg_yellow:     ${bg_yellow}bg_yellow${fnt_reset}     "
-  echo -e  "bg_light_yellow : ${bg_light_yellow}bg_light_yellow${fnt_reset}"
-  echo -en "bg_blue:       ${bg_blue}bg_blue${fnt_reset}       "
-  echo -e  "bg_light_blue:    ${bg_light_blue}bg_light_blue${fnt_reset}"
-  echo -en "bg_magenta:    ${bg_magenta}bg_magenta${fnt_reset}    "
-  echo -e  "bg_light_magenta: ${bg_light_magenta}bg_light_magenta${fnt_reset}"
-  echo -en "bg_cyan:       ${bg_cyan}bg_cyan${fnt_reset}       "
-  echo -e  "bg_light_cyan:    ${bg_light_cyan}bg_light_cyan${fnt_reset}"
-  echo -en "bg_light_gray: ${bg_light_gray}bg_light_gray${fnt_reset} "
-  echo -e  "bg_white:         ${bg_white}bg_white${fnt_reset}"
+  echo -en "BG_BLACK:      ${BG_BLACK}BG_BLACK${RESET}      "
+  echo -e  "BG_GRAY:     ${BG_GRAY}BG_GRAY${RESET}"
+  echo -en "BG_RED:        ${BG_RED}BG_RED${RESET}        "
+  echo -e  "BG_LRED:     ${BG_LRED}BG_LRED${RESET}"
+  echo -en "BG_GREEN:      ${BG_GREEN}BG_GREEN${RESET}      "
+  echo -e  "BG_LGREEN:   ${BG_LGREEN}BG_LGREEN${RESET}"
+  echo -en "BG_YELLOW:     ${BG_YELLOW}BG_YELLOW${RESET}     "
+  echo -e  "BG_LYELLOW : ${BG_LYELLOW}BG_LYELLOW${RESET}"
+  echo -en "BG_BLUE:       ${BG_BLUE}BG_BLUE${RESET}       "
+  echo -e  "BG_LBLUE:    ${BG_LBLUE}BG_LBLUE${RESET}"
+  echo -en "BG_MAGENTA:    ${BG_MAGENTA}BG_MAGENTA${RESET}    "
+  echo -e  "BG_LMAGENTA: ${BG_LMAGENTA}BG_LMAGENTA${RESET}"
+  echo -en "BG_CYAN:       ${BG_CYAN}BG_CYAN${RESET}       "
+  echo -e  "BG_LCYAN:    ${BG_LCYAN}BG_LCYAN${RESET}"
+  echo -en "BG_LGRAY: ${BG_LGRAY}BG_LGRAY${RESET} "
+  echo -e  "BG_WHITE:         ${BG_WHITE}BG_WHITE${RESET}"
   return $EX_OK
 }
 
@@ -484,7 +467,7 @@ sig_debug() { return; }
 # Globals:
 #   None
 # Arguments:
-#   Signal NAME(case or "SIG"-prefix irrelevant)
+#   Signal PROGRAM_NAME(case or "SIG"-prefix irrelevant)
 #   Callback function(Or "-" to release the signal from the trap)
 # Returns:
 #   Success/Failure
@@ -552,19 +535,19 @@ function trap_signals() {
         trap_sig HUP 'fatal "Hangup. The controlling terminal closed."'
         ;;
       INT)
-        trap_sig INT 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to ${fnt_bold}interrupt${fnt_no_bold} the process."'
+        trap_sig INT 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to interrupt the process."'
         ;;
       QUIT)
-        trap_sig QUIT 'info "Terminal quit signal. User requests that the process ${fnt_bold}quits${fnt_no_bold} and performs a core dump."'
+        trap_sig QUIT 'info "Terminal quit signal. User requests that the process quits and performs a core dump."'
         ;;
       ILL)
         trap_sig ILL 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."'
         ;;
       TRAP)
-        trap_sig TRAP 'info "Trace/breakpoint trap. An exception (or ${fnt_bold}trap${fnt_no_bold}) occured."'
+        trap_sig TRAP 'info "Trace/breakpoint trap. An exception (or trap) occured."'
         ;;
       ABRT)
-        trap_sig ABRT 'warn "Process abort signal. Got told to ${fnt_bold}abort${fnt_no_bold}/terminate."'
+        trap_sig ABRT 'warn "Process abort signal. Got told to abort/terminate."'
         ;;
       BUS)
         trap_sig BUS 'error "Access to an undefined portion of a memory object."'
@@ -585,10 +568,10 @@ function trap_signals() {
         trap_sig PIPE 'error "Process attempted to write to a pipe without a process connected to the other end."'
         ;;
       ALRM|VTALRM|PROF)
-        trap_sig ALRM 'info "The time limit specified in a call to a preceding ${fnt_bold}alarm${fnt_no_bold} setting function (such as \"setitimer\") has elapsed."'
+        trap_sig ALRM 'info "The time limit specified in a call to a preceding alarm setting function (such as \"setitimer\") has elapsed."'
         ;;
       TERM)
-        trap_sig TERM 'info "Process ${fnt_bold}termination${fnt_no_bold} requested."'
+        trap_sig TERM 'info "Process termination requested."'
         ;;
       STKFLT)
         trap_sig STKFLT 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."'
@@ -603,10 +586,10 @@ function trap_signals() {
         trap_sig STOP 'printf "\033[2D"; info "Stopping execution."'
         ;;
       TTIN)
-        trap_sig TTIN 'trace "Attempting to read in from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
+        trap_sig TTIN 'trace "Attempting to read in from the tty while in the background."'
         ;;
       TTOU)
-        trap_sig TTOU 'trace "Attempting to read out from the ${fnt_bold}tty${fnt_no_bold} while in the background."'
+        trap_sig TTOU 'trace "Attempting to read out from the tty while in the background."'
         ;;
       URG)
         trap_sig URG 'info "A socket has urgent or out-of-band data available to read."'
@@ -676,10 +659,12 @@ declare -a opts_help=()
 declare -i max_len_long=0
 declare -i max_len_arg=0
 declare -a args=()
-declare NAME
+declare PROGRAM_NAME
 declare VERSION
-declare USAGE
-declare -a SYNTAX
+declare -i YEAR
+declare FULL_NAME
+declare -a USAGE
+declare EXPLANATION
 declare DESCRIPTION
 
 ##
@@ -843,9 +828,9 @@ function parse_args() {
 ##
 # Prints the VERSION of the script.
 # Globals:
-#   NAME
+#   PROGRAM_NAME
+#   EXPLANATION
 #   USAGE
-#   SYNTAX
 #   VERSION
 #   DESCRIPTION
 #   opts_var
@@ -861,7 +846,7 @@ function parse_args() {
 #   None
 #
 function print_usage() {
-  trace "Printing USAGE."
+  trace "Printing EXPLANATION."
   function pad_right() {
     local -i len=$1
     local str="$2"
@@ -875,15 +860,15 @@ function print_usage() {
     printf '%s' "$str"
     printf "%*.${len}s" "$((len - ${#str}))" "$pad"
   }
-  echo "$NAME -- $VERSION"
-  echo -n 'Usage: '
+  echo "$PROGRAM_NAME -- $VERSION"
+  local prefix='Usage:'
   local syn
-  for syn in "${SYNTAX[@]}"; do
+  for syn in "${USAGE[@]}"; do
+    pad_left 7 "$prefix"
     echo "$(basename $0) $syn"
-    echo -n '       '
+    prefix=''
   done
-  echo -en '\033[7D' # Override the spaces
-  echo "$USAGE"
+  echo "$EXPLANATION"
   echo
   local -i index
   for index in "${!opts_help[@]}"; do
@@ -901,7 +886,7 @@ function print_usage() {
       pad_right 6
     fi
     pad_left "$((max_len_long + 1))" "$long"
-    pad_left "$((max_len_arg + 2))" "$argument"
+    pad_left "$((max_len_arg + 2 + ${#ITALIC} + ${#RESET}))" "${ITALIC}$argument${RESET}"
     printf '%s' "$helptext"
     echo
   done
@@ -913,7 +898,7 @@ function print_usage() {
 ##
 # Prints the VERSION of the script.
 # Globals:
-#   NAME
+#   PROGRAM_NAME
 #   VERSION
 # Arguments:
 #   None
@@ -921,7 +906,8 @@ function print_usage() {
 #   None
 #
 function print_version() {
-  echo "$NAME version $VERSION"
+  echo "$PROGRAM_NAME version $VERSION"
+  echo "$LICENCE"
 }
 
 
@@ -935,21 +921,43 @@ TODO "Check for 'setterm'."
 loglevel=$LL_INFO
 
 # Setup:
-NAME='Bash me'
-VERSION='v0.1'
-USAGE='Provides nice features for bash scripting.'
-SYNTAX=(
+PROGRAM_NAME="${BOLD}Bash me${RESET}"
+VERSION="${FG_GREEN}v0.1${RESET}"
+YEAR=2018
+FULL_NAME="Raphael Emberger"
+LICENCE="MIT License
+
+Copyright (c) $YEAR $FULL_NAME
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."
+EXPLANATION='Provides nice features for bash scripting.'
+USAGE=(
   '[OPTION]...    Execute script with arguments.'
+  '               Show this help page.'
 )
-define_opt '_log' '-l' '' 'n' 'Log level n.'
-define_opt '_help' '-h' '--help' '' 'Display this help text.'
-define_opt '_ver' '-v' '' '' 'Display the VERSION.'
-define_opt '_file' '' '--output' 'file' "Write log to file(defaults to $logfile)."
-DESCRIPTION=$(cat <<EOF
+define_opt '_log'  '-l' ''         'n'    "Log level ${ITALIC}n${RESET}."
+define_opt '_help' '-h' '--help'   ''     'Display this help text.'
+define_opt '_ver'  '-v' ''         ''     'Display the VERSION.'
+define_opt '_file' ''   '--output' 'file' "Write log to ${ITALIC}file${RESET}(defaults to $logfile)."
+DESCRIPTION="
 This is an example configuration to use the Bash-me script.
-You can add a licence if you want.
-EOF
-)
+You can add a licence if you want."
 
 # Parse arguments
 parse_args "$@"
@@ -970,6 +978,12 @@ sig_int() {
   error "Bye bye."
   exit;
 }
+traps+=(WINCH)
 trap_signals
+sig_winch() {
+  echo "Changed window size: $COLUMNS $ROWS"
+}
 
 # ... Code ...
+loglevel=$LL_TRACE
+echo "$(push_format $FG_BLACK $BG_CYAN)Before ${BG_MAGENTA}during$(pop_format) and after."
