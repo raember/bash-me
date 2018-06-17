@@ -1146,3 +1146,65 @@ function unlock() {
     debug "Deleted lockfile '$lockfile'"
   fi
 }
+
+##
+# Extracts a compressed file.
+# From https://stackoverflow.com/questions/17420994/bash-regex-match-string
+# Globals:
+#   None
+# Arguments:
+#   file name
+# Returns:
+#   EX_ERR if it could not extract the file.
+#
+function extract () {
+  if [ -f $1 ] ; then
+    trace "Trying to extract file '$1'."
+    case $1 in
+      *.tar.bz2)
+        tar xvjf $1
+        ;;
+      *.tar.gz)
+        tar xvzf $1
+        ;;
+      *.bz2)
+        bunzip2 $1
+        ;;
+      *.rar)
+        rar x $1
+        ;;
+      *.gz)
+        gunzip $1
+        ;;
+      *.tar)
+        tar xvf $1
+        ;;
+      *.tbz2)
+        tar xvjf $1
+        ;;
+      *.tgz)
+        tar xvzf $1
+        ;;
+      *.zip)
+        unzip $1
+        ;;
+      *.Z)
+        uncompress $1
+        ;;
+      *.7z)
+        7z x $1
+        ;;
+      *)
+        error "Could not identify the file type of '$1'."
+        return $EX_ERR
+        ;;
+    esac
+    if check_retval $?; then
+      debug "Extracted file successfully."
+    else
+      error "Could not extract file."
+    fi
+  else
+    error "'$1' is not a valid file."
+  fi
+}

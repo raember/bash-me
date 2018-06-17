@@ -301,3 +301,6 @@ To create lock files, the `lock` function can be used. It creates a lock file or
 Using `unlock` deletes the specified lock files.
 
 Beware: Unlocking inside the `EXIT`-trap leads to a deletion of the lockfile, if the script gets executed multiple times while the lock still exists because after acknowledging the lock file and exiting, the `unlock` command gets executed as well. To prevent that, it is advised to setup the lock before the signal trapping, if the `EXIT` signal is supposed to be trapped.
+
+### Decompression and extraction
+To extract an archive/compressed file of any type, the `extract` function can be used. It identifies the appropriate code to extract the file depending on its file extension.
