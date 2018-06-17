@@ -1092,6 +1092,37 @@ function peeq() {
 }
 
 
+
+###############################################################################
+#                               OTHER UTILITIES                               #
+###############################################################################
+
+##
+# Generates a random integer between 2 specified (included)bounds.
+# Globals:
+#   RANDOM
+# Arguments:
+#   The lower bound
+#   The upper bound
+# Returns:
+#   $EX_ERR if thethe lower bound exceeds the upper bound.
+#
+function random() {
+  local -i from="$1"
+  local -i to="$2"
+  if (( from > to )); then
+    error "'$from' is greater than '$to'."
+    return $EX_ERR
+  fi
+  local -i offset=$((from - 1))
+  local -i mod=$((to - offset))
+  echo "$(((RANDOM % mod) + 1 + offset))"
+}
+
+
+
+
+
 # setterm --term linux --back green --fore black --clear all
 TODO "Check for 'setterm'."
 
@@ -1168,19 +1199,11 @@ sig_winch() {
 # ... Code ...
 loglevel=$LL_TRACE
 
-IFS=";"
-declare_queue queue
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
-offer queue "Test"
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
-offer queue "another string"
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
-peeq queue value
-echo "    Peeked: $value"
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
-poll queue value
-echo "    Popped: $value"
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
-poll queue value
-echo "    Popped: $value"
-echo "Stack: '${queue[*]}', Index: '$queue_i'."
+ran=$(random 1 1)
+echo "Random: '$ran'"
+ran=$(random 1 10)
+echo "Random: '$ran'"
+ran=$(random 0 0)
+echo "Random: '$ran'"
+ran=$(random 0 10)
+echo "Random: '$ran'"

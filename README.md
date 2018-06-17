@@ -290,4 +290,13 @@ To declare a stack variable, the `declare_stack` function can be used. It alloca
 To declare a queue variable, the `declare_queue` function can be used. It allocates an array to the queue variable and declares a queue pointer(the variable has the suffix `_i` and should not be altered). Now, the following functions can be used on that queue variable:
 * `offer <queue> <value>`: Offer a value to the queue.
 * `poll <queue> <variable>`: Poll a value from the queue. Returns `EX_ERR` if the queue is empty.
-* `peeq <queue> <variable>`: Peek a value from the queue. Returns `EX_ERR` if the queue is empty.
+* `peeq <queue> <variable>`: Peek a value from the queue(Note the difference to stack's `peek`). Returns `EX_ERR` if the queue is empty.
+Unfortunately this implementation of a queue is inefficient when polling. So use with care and don't throw countless things into the queue.
+
+## Other utilities
+### Random number generator
+To generate a random integer between 2 arbitrary boundaries(boundaries included), one can use the `random` command:
+```sh
+local -i rnd=$(random 1 10)
+```
+This exampel generates a random number from 1 to 10.
