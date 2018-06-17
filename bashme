@@ -10,6 +10,20 @@
 #notes          :
 #bash_version   :4.4.12(1)-release
 #==============================================================================
+# Useful links:
+# Bash:
+# https://www.gnu.org/software/bash/manual/html_node/Indexes.html#Indexes
+# https://developer.apple.com/library/archive/documentation/OpenSource/Conceptual/ShellScripting/Introduction/Introduction.html
+# https://bash.cyberciti.biz/bash-reference-manual/index.html
+# 
+# Style guide:
+# https://google.github.io/styleguide/shell.xml
+# https://www.chromium.org/chromium-os/shell-style-guidelines
+# 
+# Others:
+# https://www.gnu.org/manual/manual.html
+# http://faculty.salina.k-state.edu/tim/unix_sg/index.html
+# https://en.wikipedia.org/wiki/ANSI_escape_code
 
 
 
@@ -781,8 +795,8 @@ function parse_args() {
       continue
     fi
     local -i index
-    local opt=""
-    local ignore=""
+    local opt=
+    local ignore=
     # Does the string start with an option?
     while find_matching_opt; do
       if expects_argument; then

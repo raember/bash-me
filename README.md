@@ -3,7 +3,7 @@ Bash-me is a script providing basic functionality for extended bash scripts.
 
 ### Example
 Here is an example of how to use the script:
-```sh
+```bash
 # Source the script
 . bashme
 
@@ -102,7 +102,7 @@ Constants for the commonly used exit codes according to [tldp.org](http://www.tl
 | `$EX_OUTOFRANGE` | `255` | Exit status out of range | `exit -1` | **exit** takes only integer args in the range 0 - 255 |
 
 To simplify the checking of the exit codes, the command `check_exit_code $?` can be used, which also logs the result appropriately. It can further be used in if-statements:
-```sh
+```bash
 ls /path/to/file/or/dir
 if check_exit_code $?; then
     echo "successful execution"
@@ -195,7 +195,7 @@ The script predefines traps for all signals defined in [signal.h](http://pubs.op
 For a better insight on their meaning, the [wiki](https://en.wikipedia.org/wiki/Signal_(IPC)) is quite helpful with that.
 
 Example method for debug trap callback:
-```sh
+```bash
 sig_debug() {
   local -i row="$((${BASH_LINENO[0]} - 3))"
   local text=$(sed "${row}q;d" "$(basename $0)")
@@ -213,7 +213,7 @@ sig_debug() {
 This displays the the row number and the code on that row which is about to be executed after hitting `[ENTER]`.
 
 To mark signals for future trapping, edit the `traps` array:
-```sh
+```bash
 # Default traps:
 traps=(
   ERR
@@ -237,13 +237,13 @@ If a signal should be trapped which hasn't been defined in the table above, it s
 After that, call the `trap_signals` function to trap those ferocious beasts.
 
 To release a trapped signal back into the wilderness, call the `trap_sig` function with the signal to be released and a `"-"` as callback function. For example to release a previously trapped signal, execute:
-```sh
+```bash
 trap_sig INT '-'
 ```
 
 ## Option parsing
 To define an option, use the `define_opt` command:
-```sh
+```bash
 #          variable shrt long       argument description
 define_opt '_log'   '-l' ''         'n'      'Log level n.'
 define_opt '_help'  '-h' '--help'   ''       'Display this help text.'
@@ -257,7 +257,7 @@ The description of the option can be formatted.
 The remaining, plain arguments parsed can be found in the `args`-array.
 
 To parse options, run the `parse_args` command with the argument list. Example:
-```sh
+```bash
 parse_args "$@"
 ```
 After this, the binary options have a `true` in their variable, whereas others have the value of the argument to that option.
@@ -289,7 +289,7 @@ Unfortunately this implementation of a queue is inefficient when polling. So use
 ## Other utilities
 ### Random number generator
 To generate a random integer between 2 arbitrary boundaries(boundaries included), one can use the `random` command:
-```sh
+```bash
 local -i rnd
 random 1 10 rnd
 echo "Random number: '$rnd'"
@@ -298,9 +298,32 @@ This example generates a random number from 1 to 10.
 
 ### Locks
 To create lock files, the `lock` function can be used. It creates a lock file or exits the script if the lock file already exists. Providing an argument lets the function create lock files with different names, which allows for specific lcok file creating.
-Using `unlock` deletes the specified lock files.
+Using `unlock` deletes the specified lock files. Example:
+
+```bash
+# Main lock
+lock
+
+# Sub lock
+lock "testing"
+
+# Release sub lock
+unlock "testing"
+
+# Release main lock
+unlock
+```
 
 Beware: Unlocking inside the `EXIT`-trap leads to a deletion of the lockfile, if the script gets executed multiple times while the lock still exists because after acknowledging the lock file and exiting, the `unlock` command gets executed as well. To prevent that, it is advised to setup the lock before the signal trapping, if the `EXIT` signal is supposed to be trapped.
 
 ### Decompression and extraction
 To extract an archive/compressed file of any type, the `extract` function can be used. It identifies the appropriate code to extract the file depending on its file extension.
+
+```bash
+extract "./tarball.tar.gz"
+if check_retval $?; then
+  info "It worked!"
+else
+  error "Or maybe it didn't?..."
+fi
+```
