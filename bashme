@@ -1094,7 +1094,7 @@ function peeq() {
 #   The upper bound
 #   The variable to store the result
 # Returns:
-#   $EX_ERR if thethe lower bound exceeds the upper bound.
+#   $EX_ERR if the lower bound exceeds the upper bound.
 #
 function random() {
   local -i from="$1"
@@ -1108,4 +1108,41 @@ function random() {
   local -i offset=$((from - 1))
   local -i mod=$((to - offset))
   eval "$_var=$(((RANDOM % mod) + 1 + offset))"
+}
+
+##
+# Tries to create a lock file. Exits the program if file already exists.
+# Globals:
+#   None
+# Arguments:
+#   name (optional)
+# Returns:
+#   $EX_ERR if file already exists.
+#
+function lock() {
+  local lockfile="/tmp/$(basename "$0")$1.lk"
+  if [[ -f "$lockfile" ]]; then
+    fatal "Lockfile($lockfile) exists!"
+    exit $EX_ERR
+  else
+    touch "$lockfile"
+    debug "Locked '$lockfile'."
+  fi
+}
+
+##
+# Deletes a lock file if it exists.
+# Globals:
+#   None
+# Arguments:
+#   name (optional)
+# Returns:
+#   None
+#
+function unlock() {
+  local lockfile="/tmp/$(basename "$0")$1.lk"
+  if [[ -f "$lockfile" ]]; then
+    rm "$lockfile"
+    debug "Deleted lockfile '$lockfile'"
+  fi
 }

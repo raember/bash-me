@@ -40,6 +40,9 @@ parse_args "$@"
 [[ -n "$_file" ]] && logfile="$_file"
 [[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
 
+# Create a lock file
+lock
+
 # Setup traps
 sig_err() {
   error "Well, I guess something went wrong."
@@ -49,16 +52,12 @@ sig_int() {
   error "Bye bye."
   exit;
 }
+sig_exit() {
+  unlock
+}
 trap_signals
 
 # ... Code ...
 loglevel=$LL_TRACE
 
-random 1 1 ran
-echo "Random: '$ran'"
-random 1 10 ran
-echo "Random: '$ran'"
-random 0 0 ran
-echo "Random: '$ran'"
-random 0 10 ran
-echo "Random: '$ran'"
+

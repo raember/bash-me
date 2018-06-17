@@ -44,7 +44,11 @@ parse_args "$@"
 [[ -n "$_file" ]] && logfile="$_file"
 [[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
 
+# Create a lock file
+lock
+
 # Setup traps
+traps+=(EXIT)
 sig_err() {
   error "Well, I guess something went wrong."
   exit;
@@ -53,9 +57,12 @@ sig_int() {
   error "Bye bye."
   exit;
 }
+sig_exit() {
+  unlock
+}
 trap_signals
 
-#loglevel=$LL_TRACE
+#loglevel=$LL_DEBUG
 # ... Code ...
 ```
 
@@ -221,7 +228,7 @@ traps=(
     SIGUSR2
 )
 # Or add new traps:
-traps+=(EXIT)
+traps+=(ALRM)
 ```
 Keep in mind that trapped signals require a callback function to be defined according to the table above.
 
@@ -288,3 +295,9 @@ random 1 10 rnd
 echo "Random number: '$rnd'"
 ```
 This example generates a random number from 1 to 10.
+
+### Locks
+To create lock files, the `lock` function can be used. It creates a lock file or exits the script if the lock file already exists. Providing an argument lets the function create lock files with different names, which allows for specific lcok file creating.
+Using `unlock` deletes the specified lock files.
+
+Beware: Unlocking inside the `EXIT`-trap leads to a deletion of the lockfile, if the script gets executed multiple times while the lock still exists because after acknowledging the lock file and exiting, the `unlock` command gets executed as well. To prevent that, it is advised to setup the lock before the signal trapping, if the `EXIT` signal is supposed to be trapped.
