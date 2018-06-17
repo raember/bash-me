@@ -1,0 +1,84 @@
+#!/bin/bash -
+
+# Source the script
+. bashme
+
+# Basic settings
+loglevel=$LL_INFO
+log2file=1
+
+
+# setterm --term linux --back green --fore black --clear all
+TODO "Check for 'setterm'."
+
+# Setup:
+PROGRAM_NAME="${BOLD}Bash me${RESET}"
+VERSION="${FG_GREEN}v0.1${RESET}"
+YEAR=2018
+FULL_NAME="Raphael Emberger"
+LICENCE="MIT License
+
+Copyright (c) $YEAR $FULL_NAME
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."
+EXPLANATION='Provides nice features for bash scripting.'
+USAGE=(
+  '[OPTION]...    Execute script with arguments.'
+  '               Show this help page.'
+)
+define_opt '_log'  '-l' ''         'n'    "Log level ${ITALIC}n${RESET}."
+define_opt '_help' '-h' '--help'   ''     'Display this help text.'
+define_opt '_ver'  '-v' ''         ''     'Display the VERSION.'
+define_opt '_file' ''   '--output' 'file' "Write log to ${ITALIC}file${RESET}(defaults to $logfile)."
+DESCRIPTION="
+This is an example configuration to use the Bash-me script.
+You can add a licence if you want."
+
+# Parse arguments
+parse_args "$@"
+
+# Process options
+[[ -n "$_help" ]] || [[ -z ${BASH_ARGC[@]} ]] && print_usage && exit
+[[ -n "$_log" ]] && loglevel="$_log"
+[[ -n "$_ver" ]] && print_version && exit
+[[ -n "$_file" ]] && logfile="$_file"
+[[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
+
+# Setup traps
+sig_err() {
+  error "Well, I guess something went wrong."
+  exit;
+}
+sig_int() {
+  error "Bye bye."
+  exit;
+}
+trap_signals
+
+# ... Code ...
+loglevel=$LL_TRACE
+
+random 1 1 ran
+echo "Random: '$ran'"
+random 1 10 ran
+echo "Random: '$ran'"
+random 0 0 ran
+echo "Random: '$ran'"
+random 0 10 ran
+echo "Random: '$ran'"
