@@ -51,9 +51,10 @@ declare log2std=1
 #   None
 #
 function log() {
-  local lineno="${BASH_LINENO[$((${#BASH_LINENO} - 1))]}"
-  local location=" ${FUNCNAME[2]}(): "
-  local logmsg="$(date '+%Y-%M-%d %H:%m:%S') $3($lineno)$location$4"
+  local lineno="${BASH_LINENO[2]}"
+  local file="${BASH_SOURCE[3]}"
+  local func=" ${FUNCNAME[2]}(): "
+  local logmsg="$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func$4"
   if [[ -n "$log2std" ]]; then
     if (( $2 >= $LL_ERROR )); then
       echo -e "$1$logmsg$RESET" >&2
@@ -194,7 +195,7 @@ function NYI() {
 ##
 # Marks a position in the code as a TODO.
 # Globals:
-#   LL_INFO
+#   LL_DEBUG
 #   FG_GREEN
 #   BOLD
 #   loglevel
@@ -205,8 +206,8 @@ function NYI() {
 #
 function TODO() {
   function log_todo() {
-    [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
-    log "$FG_GREEN$BOLD" $LL_INFO '[TODO]' "$1"
+    [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
+    log "$FG_GREEN$BOLD" $LL_DEBUG '[TODO]' "$1"
     return $EX_OK
   }
   log_todo "$1"
@@ -239,43 +240,42 @@ declare -ri EX_OUTOFRANGE=255
 #   Last return value ($?)
 #
 function check_retval() {
-  trace "Checking return value: $1"
   local retval="$1"
-  local excode="return value $retval: "
+  trace "Checking return value: '$retval'"
   if [[ $retval -gt 64 ]] && [[ $retval -lt 114 ]]; then
-    debug "${excode}Custom C/C++ return code according to /usr/include/sysexits.h detected."
+    debug "Custom C/C++ return code according to /usr/include/sysexits.h detected."
+  elif [[ $retval -gt 128 ]] && [[ $retval -lt 166 ]]; then
+    debug "Custom fatal return value detected."
+  else
+    case $retval in
+      $EX_OK)
+        debug "Code exited normally."
+        ;;
+      $EX_ERR)
+        debug "Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
+        ;;
+      $EX_MISSUSE)
+        debug "Misuse of shell builtins. Missing keyword or command or permission problem."
+        ;;
+      $EX_CANNOTEXEC)
+        debug "Command invoked cannot execute. Permission problem or command is not an executable."
+        ;;
+      $EX_CMDNOTFOUND)
+        debug "Command not found. Possible problem with \$PATH or a typo."
+        ;;
+      $EX_INVALARG)
+        debug "Invalid argument to exit. exit takes only integer args in the range 0 - 255."
+        ;;
+      $EX_INT)
+        debug "Command terminated by Control-C."
+        ;;
+      $EX_OUTOFRANGE)
+        debug "Exit status out of range. exit takes only integer args in the range 0 - 255."
+        ;;
+      ?)
+        warn "Could not categorize return value appropriately."
+    esac
   fi
-  if [[ $retval -gt 128 ]] && [[ $retval -lt 166 ]]; then
-    debug "${excode}Custom fatal return value detected."
-  fi
-  case $retval in
-    $EX_OK)
-      debug "${excode}Code exited normally."
-      ;;
-    $EX_ERR)
-      debug "${excode}Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
-      ;;
-    $EX_MISSUSE)
-      debug "${excode}Misuse of shell builtins. Missing keyword or command or permission problem."
-      ;;
-    $EX_CANNOTEXEC)
-      debug "${excode}Command invoked cannot execute. Permission problem or command is not an executable."
-      ;;
-    $EX_CMDNOTFOUND)
-      debug "${excode}Command not found. Possible problem with \$PATH or a typo."
-      ;;
-    $EX_INVALARG)
-      debug "${excode}Invalid argument to exit. exit takes only integer args in the range 0 - 255."
-      ;;
-    $EX_INT)
-      debug "${excode}Command terminated by Control-C."
-      ;;
-    $EX_OUTOFRANGE)
-      debug "${excode}Exit status out of range. exit takes only integer args in the range 0 - 255."
-      ;;
-    ?)
-      warn "Could not categorize return value $retval appropriately."
-  esac
   return $retval
 }
 
@@ -497,7 +497,7 @@ EOF
     )
     trace "Trapping 'SIG$sig'. Callback: $callback()."
     if ! trap "$delegate" "$sig"; then
-      warn 'Could not trap signal.'
+      warn "Could not trap signal 'SIG$sig'."
       return $EX_ERR
     fi
   fi
@@ -518,6 +518,7 @@ function trap_signals() {
   trace 'Trapping signals.'
   local -u sig
   for sig in "${traps[@]}"; do
+    trace "Trying to trap 'SIG$sig'."
     case $sig in
       EXIT)
         trap_sig EXIT 'info "Exiting script. Cleaning up."'
@@ -622,7 +623,7 @@ function trap_signals() {
           error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "trace \"Received real-time signal MIN $num.\""
+        trap_sig "$sig" "trace \"Received real-time signal MIN +$num.\""
         ;;
       RTMAX*)
         local -i num
@@ -634,7 +635,7 @@ function trap_signals() {
           error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "trace \"Received real-time signal MAX $num.\""
+        trap_sig "$sig" "trace \"Received real-time signal MAX -$num.\""
         ;;
       *)
         debug "Signal 'SIG$sig' unknown. Trying to trap anyway."
@@ -686,7 +687,7 @@ declare DESCRIPTION
 # Returns:
 #   None
 #
-define_opt() {
+function define_opt() {
   debug "Defining option '$1'. Short: '$2'. Long: '$3'. Argument: '$4'."
   opts_var+=("$1")
   opts_short+=("$2")
@@ -725,7 +726,7 @@ function parse_args() {
       if [[ $opt_str =~ ^\s*($short|$long)(.*)$ ]]; then
         opt="${BASH_REMATCH[1]}"
         opt_str="${BASH_REMATCH[2]}"
-        trace "Found '$opt' at index $index. Remaining string: '$opt_str'"
+        trace "Found '$opt'. Remaining string: '$opt_str'."
         return $EX_OK
       fi
     done
@@ -742,7 +743,7 @@ function parse_args() {
     return $EX_ERR
   }
   function set_option_variable() {
-    trace "Set argument for '${opts_var[$index]}'."
+    trace "Setting argument for '${opts_var[$index]}'."
     local val="$1"
     if [[ -z "$val" ]]; then
       if [[ ! $opt =~ ^\s*(${opts_short[$index]}|${opts_long[$index]})\s*(.*)$ ]]; then
@@ -761,21 +762,8 @@ function parse_args() {
       trace 'No remaining argument in string.'
       return $EX_ERR
     fi
-    trace "Found '$opt_str'."
+    trace "Argument determined to be '$opt_str'."
     return $EX_OK
-  }
-  function find_index() {
-    trace "Finding index to option '$opt'."
-    for index in "${!opts_short[@]}"; do
-      local short="${opts_short[$index]}"
-      local long="${opts_long[$index]}"
-      if [[ $opt =~ ^\s*($short|$long)$ ]]; then
-        trace "Found option at index $index."
-        return $EX_OK
-      fi
-    done
-    warn 'Did not find index.'
-    return $EX_ERR
   }
 
   # Do it
@@ -784,12 +772,11 @@ function parse_args() {
   local opt_str
   local last_opt
   for opt_str in "$@"; do
-    trace "Checking string '$opt_str'."
+    trace "Consuming string '$opt_str'."
     if [[ -n "$last_opt" ]]; then
       trace "Deduced to be argument for '$last_opt'."
       opt="$last_opt"
       last_opt=""
-      find_index
       set_option_variable "$opt_str"
       continue
     fi
@@ -804,7 +791,7 @@ function parse_args() {
           ignore=true
           break
         else
-          set_option_variable true
+          trace "Marking next string to be the argument for the current option."
           last_opt="$opt"
           break
         fi
@@ -821,7 +808,7 @@ function parse_args() {
       args+=("$opt_str")
     fi
   done
-  trace "Done parsing options."
+  trace "Finished parsing options."
   return $EX_OK
 }
 
@@ -846,7 +833,7 @@ function parse_args() {
 #   None
 #
 function print_usage() {
-  trace "Printing EXPLANATION."
+  trace 'Printing usage.'
   function pad_right() {
     local -i len=$1
     local str="$2"
@@ -906,7 +893,8 @@ function print_usage() {
 #   None
 #
 function print_version() {
-  echo "$PROGRAM_NAME version $VERSION"
+  trace 'Printing version.'
+  echo "$PROGRAM_NAME version: $VERSION"
   echo "$LICENCE"
 }
 
@@ -928,7 +916,7 @@ function print_version() {
 function declare_stack() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
-  trace "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
+  debug "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
   declare -ag $_stk
   declare -ig $_stk_i
   eval "$_stk_i=0"
@@ -948,7 +936,7 @@ function declare_stack() {
 function push() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
-  trace "Pushing variable '$2' to stack '$_stk'."
+  debug "Pushing variable '$2' to stack '$_stk'."
   eval "$_stk[\$$_stk_i]=\"$2\""
   let "$_stk_i = $_stk_i + 1"
 }
@@ -972,7 +960,7 @@ function pop() {
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
-  trace "Popping a variable from stack '$_stk'."
+  debug "Popping a variable from stack '$_stk'."
   let "$_stk_i = $_stk_i - 1"
   eval "$_val=\"\${$_stk[\$$_stk_i]}\""
   eval "unset $_stk[\$$_stk_i]"
@@ -997,7 +985,7 @@ function peek() {
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
-  trace "Peeking variable from stack '$_stk'."
+  debug "Peeking variable from stack '$_stk'."
   eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
 }
 
@@ -1015,7 +1003,7 @@ function peek() {
 function declare_queue() {
   local _que="$1"
   local _que_i="${_que}_i"
-  trace "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
+  debug "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
   declare -ag $_que
   declare -ig $_que_i
   eval "$_que_i=0"
@@ -1035,7 +1023,7 @@ function declare_queue() {
 function offer() {
   local _que="$1"
   local _que_i="${_que}_i"
-  trace "offering variable '$2' to queue '$_que'."
+  debug "offering variable '$2' to queue '$_que'."
   eval "$_que[\$$_que_i]=\"$2\""
   let "$_que_i = $_que_i + 1"
 }
@@ -1059,7 +1047,7 @@ function poll() {
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
-  trace "Popping a variable from queue '$_que'."
+  debug "Popping a variable from queue '$_que'."
   eval "$_val=\"\${$_que[0]}\""
   let "$_que_i = $_que_i - 1"
   local index
@@ -1087,7 +1075,7 @@ function peeq() {
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
-  trace "Peeking a variable from queue '$_que'."
+  debug "Peeking a variable from queue '$_que'."
   eval "$_val=\"\${$_que[0]}\""
 }
 
@@ -1104,106 +1092,20 @@ function peeq() {
 # Arguments:
 #   The lower bound
 #   The upper bound
+#   The variable to store the result
 # Returns:
 #   $EX_ERR if thethe lower bound exceeds the upper bound.
 #
 function random() {
   local -i from="$1"
   local -i to="$2"
+  local _var="$3"
   if (( from > to )); then
     error "'$from' is greater than '$to'."
     return $EX_ERR
   fi
+  trace "Generating random number in [$from, $to]."
   local -i offset=$((from - 1))
   local -i mod=$((to - offset))
-  echo "$(((RANDOM % mod) + 1 + offset))"
+  eval "$_var=$(((RANDOM % mod) + 1 + offset))"
 }
-
-
-
-
-
-# setterm --term linux --back green --fore black --clear all
-TODO "Check for 'setterm'."
-
-###############################################################################
-#                                     EOF                                     #
-###############################################################################
-# Basic settings
-loglevel=$LL_INFO
-
-# Setup:
-PROGRAM_NAME="${BOLD}Bash me${RESET}"
-VERSION="${FG_GREEN}v0.1${RESET}"
-YEAR=2018
-FULL_NAME="Raphael Emberger"
-LICENCE="MIT License
-
-Copyright (c) $YEAR $FULL_NAME
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the \"Software\"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE."
-EXPLANATION='Provides nice features for bash scripting.'
-USAGE=(
-  '[OPTION]...    Execute script with arguments.'
-  '               Show this help page.'
-)
-define_opt '_log'  '-l' ''         'n'    "Log level ${ITALIC}n${RESET}."
-define_opt '_help' '-h' '--help'   ''     'Display this help text.'
-define_opt '_ver'  '-v' ''         ''     'Display the VERSION.'
-define_opt '_file' ''   '--output' 'file' "Write log to ${ITALIC}file${RESET}(defaults to $logfile)."
-DESCRIPTION="
-This is an example configuration to use the Bash-me script.
-You can add a licence if you want."
-
-# Parse arguments
-parse_args "$@"
-
-# Process options
-[[ -n "$_help" ]] || [[ -z ${BASH_ARGC[@]} ]] && print_usage && exit
-[[ -n "$_log" ]] && loglevel="$_log"
-[[ -n "$_ver" ]] && print_version && exit
-[[ -n "$_file" ]] && logfile="$_file"
-[[ -n "${args[@]}" ]] && IFS=";" && info "Provided additional arguments: '${args[*]}'"
-
-# Setup traps
-sig_err() {
-  error "Well, I guess something went wrong."
-  exit;
-}
-sig_int() {
-  error "Bye bye."
-  exit;
-}
-traps+=(WINCH)
-trap_signals
-sig_winch() {
-  echo "Changed window size: $COLUMNS $ROWS"
-}
-
-# ... Code ...
-loglevel=$LL_TRACE
-
-ran=$(random 1 1)
-echo "Random: '$ran'"
-ran=$(random 1 10)
-echo "Random: '$ran'"
-ran=$(random 0 0)
-echo "Random: '$ran'"
-ran=$(random 0 10)
-echo "Random: '$ran'"

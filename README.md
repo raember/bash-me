@@ -9,6 +9,11 @@ Here is an example of how to use the script:
 
 # Basic settings
 loglevel=$LL_INFO
+log2file=1
+
+
+# setterm --term linux --back green --fore black --clear all
+TODO "Check for 'setterm'."
 
 # Setup:
 PROGRAM_NAME="${BOLD}Bash me${RESET}"
@@ -70,6 +75,7 @@ sig_int() {
 }
 trap_signals
 
+#loglevel=$LL_TRACE
 # ... Code ...
 ```
 
@@ -91,7 +97,7 @@ To disable logging to `stdout`/`stderr`, the variable `log2std` can be cleared.
 
 To further improve writing scripts, there are 2 additional commands:
 * `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_WARN` level.
-* `TODO`: Marks a point in the code as a TODO. Logs on the `LL_INFO` level.
+* `TODO`: Marks a point in the code as a TODO. Logs on the `LL_DEBUG` level.
 
 ## Return values
 Constants for the commonly used exit codes according to [tldp.org](http://www.tldp.org/LDP/abs/html/exitcodes.html#EXITCODESREF "Appendix E. Exit Codes With Special Meanings"):
@@ -297,6 +303,8 @@ Unfortunately this implementation of a queue is inefficient when polling. So use
 ### Random number generator
 To generate a random integer between 2 arbitrary boundaries(boundaries included), one can use the `random` command:
 ```sh
-local -i rnd=$(random 1 10)
+local -i rnd
+random 1 10 rnd
+echo "Random number: '$rnd'"
 ```
-This exampel generates a random number from 1 to 10.
+This example generates a random number from 1 to 10.
