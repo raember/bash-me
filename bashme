@@ -960,6 +960,7 @@ function push() {
 #   ${1}_i  - The index(=size)
 # Arguments:
 #   The stack variable
+#   The variable to assign the popped value to
 # Returns:
 #   $EX_ERR if the stack is empty.
 #
@@ -984,6 +985,7 @@ function pop() {
 #   ${1}_i  - The index(=size)
 # Arguments:
 #   The stack variable
+#   The variable to assign the peeked value to
 # Returns:
 #   $EX_ERR if the stack is empty.
 #
@@ -999,6 +1001,95 @@ function peek() {
   eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
 }
 
+
+##
+# Declares a queue on the global scope.
+# Globals:
+#   ${1}    - The queue
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The queue variable
+# Returns:
+#   None
+#
+function declare_queue() {
+  local _que="$1"
+  local _que_i="${_que}_i"
+  trace "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
+  declare -ag $_que
+  declare -ig $_que_i
+  eval "$_que_i=0"
+}
+
+##
+# Offers a value to the queue.
+# Globals:
+#   ${1}    - The queue
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The queue variable
+#   The value to offer
+# Returns:
+#   None
+#
+function offer() {
+  local _que="$1"
+  local _que_i="${_que}_i"
+  trace "offering variable '$2' to queue '$_que'."
+  eval "$_que[\$$_que_i]=\"$2\""
+  let "$_que_i = $_que_i + 1"
+}
+
+##
+# Polls a value from the queue.
+# Globals:
+#   ${1}    - The queue
+#   ${1}_i  - The index(=size)
+# Arguments:
+#   The queue variable
+#   The variable to assign the polled value to
+# Returns:
+#   $EX_ERR if the queue is empty.
+#
+function poll() {
+  local _que="$1"
+  local _que_i="${_que}_i"
+  local _val="$2"
+  if eval "(( $_que_i < 1 ))"; then
+    debug "Queue '$_que' is empty."
+    return $EX_ERR
+  fi
+  trace "Popping a variable from queue '$_que'."
+  eval "$_val=\"\${$_que[0]}\""
+  let "$_que_i = $_que_i - 1"
+  local index
+  for ((index=0;index<$_que_i;index++)); do
+    eval "$_que[$index]=\"\${$_que[(( $index + 1 ))]}\""
+  done
+  eval "unset $_que[\$$_que_i]"
+}
+
+##
+# Peeks a value from the queue.
+# Globals:
+#   ${1}    - The queue
+# Arguments:
+#   The queue variable
+#   The variable to assign the polled value to
+# Returns:
+#   $EX_ERR if the queue is empty.
+#
+function peeq() {
+  local _que="$1"
+  local _que_i="${_que}_i"
+  local _val="$2"
+  if eval "(( $_que_i < 1 ))"; then
+    debug "Queue '$_que' is empty."
+    return $EX_ERR
+  fi
+  trace "Peeking a variable from queue '$_que'."
+  eval "$_val=\"\${$_que[0]}\""
+}
 
 
 # setterm --term linux --back green --fore black --clear all
@@ -1078,18 +1169,18 @@ sig_winch() {
 loglevel=$LL_TRACE
 
 IFS=";"
-declare_stack stk
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
-push stk "Test"
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
-push stk "another string"
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
-peek stk value
+declare_queue queue
+echo "Stack: '${queue[*]}', Index: '$queue_i'."
+offer queue "Test"
+echo "Stack: '${queue[*]}', Index: '$queue_i'."
+offer queue "another string"
+echo "Stack: '${queue[*]}', Index: '$queue_i'."
+peeq queue value
 echo "    Peeked: $value"
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
-pop stk value
+echo "Stack: '${queue[*]}', Index: '$queue_i'."
+poll queue value
 echo "    Popped: $value"
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
-pop stk value
+echo "Stack: '${queue[*]}', Index: '$queue_i'."
+poll queue value
 echo "    Popped: $value"
-echo "Stack: '${stk[*]}', Index: '$stk_i'."
+echo "Stack: '${queue[*]}', Index: '$queue_i'."

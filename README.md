@@ -263,9 +263,8 @@ The description of the option can be formatted.
 
 The remaining, plain arguments parsed can be found in the `args`-array.
 
-To parse options, run the `parse_args` command with the `getopts`-argument. Example:
+To parse options, run the `parse_args` command with the argument list. Example:
 ```sh
-# Parses the argument list for h-, f-(with argument) and l-flags:
 parse_args "$@"
 ```
 After this, the binary options have a `true` in their variable, whereas others have the value of the argument to that option.
@@ -287,3 +286,8 @@ To declare a stack variable, the `declare_stack` function can be used. It alloca
 * `push <stack> <value>`: Push a value to the stack.
 * `pop <stack> <variable>`: Pop a value from the stack. Returns `EX_ERR` if the stack is empty.
 * `peek <stack> <variable>`: Peek a value from the stack. Returns `EX_ERR` if the stack is empty.
+### Queue
+To declare a queue variable, the `declare_queue` function can be used. It allocates an array to the queue variable and declares a queue pointer(the variable has the suffix `_i` and should not be altered). Now, the following functions can be used on that queue variable:
+* `offer <queue> <value>`: Offer a value to the queue.
+* `poll <queue> <variable>`: Poll a value from the queue. Returns `EX_ERR` if the queue is empty.
+* `peeq <queue> <variable>`: Peek a value from the queue. Returns `EX_ERR` if the queue is empty.
