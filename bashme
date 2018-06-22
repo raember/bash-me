@@ -24,6 +24,7 @@
 # https://www.gnu.org/manual/manual.html
 # http://faculty.salina.k-state.edu/tim/unix_sg/index.html
 # https://en.wikipedia.org/wiki/ANSI_escape_code
+# https://www.cyberciti.biz/tips/spice-up-your-unix-linux-shell-scripts.html
 
 
 
@@ -73,7 +74,7 @@ function log() {
     file="${BASH_SOURCE[2]}"
   fi
   local logmsg="$4"
-  if [[ -n "$log2std" ]]; then
+  if [[ -n "$log2std" ]] && (( $loglevel <= $2 )); then
     if (( $2 >= $LL_ERROR )); then
       echo -e "$1$logmsg$RESET" >&2
     else
@@ -97,7 +98,7 @@ function log() {
 #   None
 #
 function trace() {
-  [[ $loglevel -gt $LL_TRACE ]] && return $EX_OK
+  [[ $loglevel -gt $LL_TRACE ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_LGRAY$DIM" $LL_TRACE '[TRACE]' "$1"
   return $EX_OK
 }
@@ -114,7 +115,7 @@ function trace() {
 #   None
 #
 function debug() {
-  [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
+  [[ $loglevel -gt $LL_DEBUG ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_LGRAY" $LL_DEBUG '[DEBUG]' "$1"
   return $EX_OK
 }
@@ -131,7 +132,7 @@ function debug() {
 #   None
 #
 function info() {
-  [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
+  [[ $loglevel -gt $LL_INFO ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_WHITE" $LL_INFO '[INFO] ' "$1"
   return $EX_OK
 }
@@ -148,7 +149,7 @@ function info() {
 #   None
 #
 function warn() {
-  [[ $loglevel -gt $LL_WARN ]] && return $EX_OK
+  [[ $loglevel -gt $LL_WARN ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_YELLOW" $LL_WARN '[WARN] ' "$1"
   return $EX_OK
 }
@@ -165,7 +166,7 @@ function warn() {
 #   None
 #
 function error() {
-  [[ $loglevel -gt $LL_ERROR ]] && return $EX_OK
+  [[ $loglevel -gt $LL_ERROR ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_RED" $LL_ERROR '[ERROR]' "$1"
   return $EX_OK
 }
@@ -182,7 +183,7 @@ function error() {
 #   None
 #
 function fatal() {
-  [[ $loglevel -gt $LL_FATAL ]] && return $EX_OK
+  [[ $loglevel -gt $LL_FATAL ]] && [[ -z "$log2file" ]] && return $EX_OK
   log "$FG_LRED$BOLD" $LL_FATAL '[FATAL]' "$1"
   return $EX_OK
 }
@@ -202,7 +203,7 @@ function fatal() {
 #
 function NYI() {
   function log_nyi() {
-    [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
+    [[ $loglevel -gt $LL_INFO ]] && [[ -z "$log2file" ]] && return $EX_OK
     log "$FG_LYELLOW$BOLD" $LL_WARN '[TODO] ' "$1"
     return $EX_OK
   }
@@ -224,7 +225,7 @@ function NYI() {
 #
 function TODO() {
   function log_todo() {
-    [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
+    [[ $loglevel -gt $LL_DEBUG ]] && [[ -z "$log2file" ]] && return $EX_OK
     log "$FG_GREEN$BOLD" $LL_DEBUG '[TODO] ' "$1"
     return $EX_OK
   }

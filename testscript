@@ -60,9 +60,14 @@ sig_exit() {
 trap_signals
 
 # ... Code ...
-loglevel=$LL_TRACE
+# loglevel=$LL_TRACE
 
 
 #dialog --title 'Message' --msgbox 'Hello, world!' 5 20
-info 'hi there!'
+trace 'trace'
+debug 'debug'
+info 'info'
+warn 'warn'
+error 'error'
+fatal 'fatal'
 unlock
