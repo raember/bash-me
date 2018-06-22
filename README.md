@@ -83,7 +83,7 @@ If desired, the logfile name can be changed via the `logfile` variable.
 To disable logging to `stdout`/`stderr`, the variable `log2std` can be cleared.
 
 To further improve writing scripts, there are 2 additional commands:
-* `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_WARN` level.
+* `NYI`: Serves as an exit point for code that has **n**ot **y**et been **i**mpemented. Logs on the `LL_ERROR` level.
 * `TODO`: Marks a point in the code as a TODO. Logs on the `LL_DEBUG` level.
 
 ## Return values

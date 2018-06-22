@@ -42,7 +42,7 @@ declare -ri LL_QUIET=6
 
 # Variables
 declare -i loglevel=$LL_INFO
-declare logfile="./$(basename "$0").log"
+declare logfile="./$(/bin/basename "$0").log"
 declare log2file=
 declare log2std=1
 
@@ -76,12 +76,12 @@ function log() {
   local logmsg="$4"
   if [[ -n "$log2std" ]] && (( $loglevel <= $2 )); then
     if (( $2 >= $LL_ERROR )); then
-      echo -e "$1$logmsg$RESET" >&2
+      builtin echo -e "$1$logmsg$RESET" >&2
     else
-      echo -e "$1$logmsg$RESET"
+      builtin echo -e "$1$logmsg$RESET"
     fi
   fi
-  [[ -n "$log2file" ]] && echo "$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
+  [[ -n "$log2file" ]] && builtin echo "$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
   return $EX_OK
 }
 
@@ -192,7 +192,7 @@ function fatal() {
 # A makeshift function to cover logging the access to not yet implemented.
 # functionality.
 # Globals:
-#   LL_WARN
+#   LL_ERROR
 #   FG_LYELLOW
 #   BOLD
 #   loglevel
@@ -204,10 +204,10 @@ function fatal() {
 function NYI() {
   function log_nyi() {
     [[ $loglevel -gt $LL_INFO ]] && [[ -z "$log2file" ]] && return $EX_OK
-    log "$FG_LYELLOW$BOLD" $LL_WARN '[TODO] ' "$1"
+    log "$FG_LYELLOW$BOLD" $LL_ERROR '[ERROR]' "$1"
     return $EX_OK
   }
-  log_nyi "Not yet implemented!"
+  log_nyi 'Not yet implemented!'
   return $EX_OK
 }
 
@@ -373,16 +373,16 @@ readonly RESET="$(tput sgr0)"
 #
 function formatting_test() {
   trace 'Printing formatting table.'
-  echo -e "Formattings:"
-  echo -e "BOLD:      ${BOLD}BOLD${RESET}."
-  echo -e "DIM:       ${DIM}DIM${RESET}."
-  echo -e "ITALIC:    ${ITALIC}ITALIC${RESET}."
-  echo -e "UNDERLINE: ${UNDERLINE}UNDERLINE${UNDERLINE_STOP}."
-  echo -e "STANDOUT:  ${STANDOUT}STANDOUT${STANDOUT_STOP}."
-  echo -e "BLINK:     ${BLINK}BLINK${RESET}."
-  echo -e "REVERSE:   ${REVERSE}REVERSE${RESET}."
-  echo -e "INVISIBLE: ${INVISIBLE}INVISIBLE${RESET}."
-  echo -e "STRIKEOUT: ${STRIKEOUT}STRIKEOUT${RESET}."
+  builtin echo -e "Formattings:"
+  builtin echo -e "BOLD:      ${BOLD}BOLD${RESET}."
+  builtin echo -e "DIM:       ${DIM}DIM${RESET}."
+  builtin echo -e "ITALIC:    ${ITALIC}ITALIC${RESET}."
+  builtin echo -e "UNDERLINE: ${UNDERLINE}UNDERLINE${UNDERLINE_STOP}."
+  builtin echo -e "STANDOUT:  ${STANDOUT}STANDOUT${STANDOUT_STOP}."
+  builtin echo -e "BLINK:     ${BLINK}BLINK${RESET}."
+  builtin echo -e "REVERSE:   ${REVERSE}REVERSE${RESET}."
+  builtin echo -e "INVISIBLE: ${INVISIBLE}INVISIBLE${RESET}."
+  builtin echo -e "STRIKEOUT: ${STRIKEOUT}STRIKEOUT${RESET}."
   return $EX_OK
 }
 
@@ -429,40 +429,40 @@ function formatting_test() {
 #
 function color_test() {
   trace 'Printing color table.'
-  echo -e "Foreground:"
-  echo -en "FG_BLACK:      ${FG_BLACK}FG_BLACK${RESET}      "
-  echo -e  "FG_GRAY:     ${FG_GRAY}FG_GRAY${RESET}"
-  echo -en "FG_RED:        ${FG_RED}FG_RED${RESET}        "
-  echo -e  "FG_LRED:     ${FG_LRED}FG_LRED${RESET}"
-  echo -en "FG_GREEN:      ${FG_GREEN}FG_GREEN${RESET}      "
-  echo -e  "FG_LGREEN:   ${FG_LGREEN}FG_LGREEN${RESET}"
-  echo -en "FG_YELLOW:     ${FG_YELLOW}FG_YELLOW${RESET}     "
-  echo -e  "FG_LYELLOW : ${FG_LYELLOW}FG_LYELLOW${RESET}"
-  echo -en "FG_BLUE:       ${FG_BLUE}FG_BLUE${RESET}       "
-  echo -e  "FG_LBLUE:    ${FG_LBLUE}FG_LBLUE${RESET}"
-  echo -en "FG_MAGENTA:    ${FG_MAGENTA}FG_MAGENTA${RESET}    "
-  echo -e  "FG_LMAGENTA: ${FG_LMAGENTA}FG_LMAGENTA${RESET}"
-  echo -en "FG_CYAN:       ${FG_CYAN}FG_CYAN${RESET}       "
-  echo -e  "FG_LCYAN:    ${FG_LCYAN}FG_LCYAN${RESET}"
-  echo -en "FG_LGRAY: ${FG_LGRAY}FG_LGRAY${RESET} "
-  echo -e  "FG_WHITE:         ${FG_WHITE}FG_WHITE${RESET}"
-  echo -e "Background:"
-  echo -en "BG_BLACK:      ${BG_BLACK}BG_BLACK${RESET}      "
-  echo -e  "BG_GRAY:     ${BG_GRAY}BG_GRAY${RESET}"
-  echo -en "BG_RED:        ${BG_RED}BG_RED${RESET}        "
-  echo -e  "BG_LRED:     ${BG_LRED}BG_LRED${RESET}"
-  echo -en "BG_GREEN:      ${BG_GREEN}BG_GREEN${RESET}      "
-  echo -e  "BG_LGREEN:   ${BG_LGREEN}BG_LGREEN${RESET}"
-  echo -en "BG_YELLOW:     ${BG_YELLOW}BG_YELLOW${RESET}     "
-  echo -e  "BG_LYELLOW : ${BG_LYELLOW}BG_LYELLOW${RESET}"
-  echo -en "BG_BLUE:       ${BG_BLUE}BG_BLUE${RESET}       "
-  echo -e  "BG_LBLUE:    ${BG_LBLUE}BG_LBLUE${RESET}"
-  echo -en "BG_MAGENTA:    ${BG_MAGENTA}BG_MAGENTA${RESET}    "
-  echo -e  "BG_LMAGENTA: ${BG_LMAGENTA}BG_LMAGENTA${RESET}"
-  echo -en "BG_CYAN:       ${BG_CYAN}BG_CYAN${RESET}       "
-  echo -e  "BG_LCYAN:    ${BG_LCYAN}BG_LCYAN${RESET}"
-  echo -en "BG_LGRAY: ${BG_LGRAY}BG_LGRAY${RESET} "
-  echo -e  "BG_WHITE:         ${BG_WHITE}BG_WHITE${RESET}"
+  builtin echo -e "Foreground:"
+  builtin echo -en "FG_BLACK:      ${FG_BLACK}FG_BLACK${RESET}      "
+  builtin echo -e  "FG_GRAY:     ${FG_GRAY}FG_GRAY${RESET}"
+  builtin echo -en "FG_RED:        ${FG_RED}FG_RED${RESET}        "
+  builtin echo -e  "FG_LRED:     ${FG_LRED}FG_LRED${RESET}"
+  builtin echo -en "FG_GREEN:      ${FG_GREEN}FG_GREEN${RESET}      "
+  builtin echo -e  "FG_LGREEN:   ${FG_LGREEN}FG_LGREEN${RESET}"
+  builtin echo -en "FG_YELLOW:     ${FG_YELLOW}FG_YELLOW${RESET}     "
+  builtin echo -e  "FG_LYELLOW : ${FG_LYELLOW}FG_LYELLOW${RESET}"
+  builtin echo -en "FG_BLUE:       ${FG_BLUE}FG_BLUE${RESET}       "
+  builtin echo -e  "FG_LBLUE:    ${FG_LBLUE}FG_LBLUE${RESET}"
+  builtin echo -en "FG_MAGENTA:    ${FG_MAGENTA}FG_MAGENTA${RESET}    "
+  builtin echo -e  "FG_LMAGENTA: ${FG_LMAGENTA}FG_LMAGENTA${RESET}"
+  builtin echo -en "FG_CYAN:       ${FG_CYAN}FG_CYAN${RESET}       "
+  builtin echo -e  "FG_LCYAN:    ${FG_LCYAN}FG_LCYAN${RESET}"
+  builtin echo -en "FG_LGRAY: ${FG_LGRAY}FG_LGRAY${RESET} "
+  builtin echo -e  "FG_WHITE:         ${FG_WHITE}FG_WHITE${RESET}"
+  builtin echo -e "Background:"
+  builtin echo -en "BG_BLACK:      ${BG_BLACK}BG_BLACK${RESET}      "
+  builtin echo -e  "BG_GRAY:     ${BG_GRAY}BG_GRAY${RESET}"
+  builtin echo -en "BG_RED:        ${BG_RED}BG_RED${RESET}        "
+  builtin echo -e  "BG_LRED:     ${BG_LRED}BG_LRED${RESET}"
+  builtin echo -en "BG_GREEN:      ${BG_GREEN}BG_GREEN${RESET}      "
+  builtin echo -e  "BG_LGREEN:   ${BG_LGREEN}BG_LGREEN${RESET}"
+  builtin echo -en "BG_YELLOW:     ${BG_YELLOW}BG_YELLOW${RESET}     "
+  builtin echo -e  "BG_LYELLOW : ${BG_LYELLOW}BG_LYELLOW${RESET}"
+  builtin echo -en "BG_BLUE:       ${BG_BLUE}BG_BLUE${RESET}       "
+  builtin echo -e  "BG_LBLUE:    ${BG_LBLUE}BG_LBLUE${RESET}"
+  builtin echo -en "BG_MAGENTA:    ${BG_MAGENTA}BG_MAGENTA${RESET}    "
+  builtin echo -e  "BG_LMAGENTA: ${BG_LMAGENTA}BG_LMAGENTA${RESET}"
+  builtin echo -en "BG_CYAN:       ${BG_CYAN}BG_CYAN${RESET}       "
+  builtin echo -e  "BG_LCYAN:    ${BG_LCYAN}BG_LCYAN${RESET}"
+  builtin echo -en "BG_LGRAY: ${BG_LGRAY}BG_LGRAY${RESET} "
+  builtin echo -e  "BG_WHITE:         ${BG_WHITE}BG_WHITE${RESET}"
   return $EX_OK
 }
 
@@ -515,7 +515,7 @@ function trap_sig() {
 EOF
     )
     trace "Trapping 'SIG$sig'. Callback: $callback()."
-    if ! trap "$delegate" "$sig"; then
+    if ! builtin trap "$delegate" "$sig"; then
       warn "Could not trap signal 'SIG$sig'."
       return $EX_ERR
     fi
@@ -555,7 +555,7 @@ function trap_signals() {
         trap_sig HUP 'fatal "Hangup. The controlling terminal closed."'
         ;;
       INT)
-        trap_sig INT 'printf "\033[2D"; info "Terminal interrupt signal. User wishes to interrupt the process."'
+        trap_sig INT 'builtin printf "\033[2D"; info "Terminal interrupt signal. User wishes to interrupt the process."'
         ;;
       QUIT)
         trap_sig QUIT 'info "Terminal quit signal. User requests that the process quits and performs a core dump."'
@@ -603,7 +603,7 @@ function trap_signals() {
         trap_sig CONT 'info "Continuing execution."'
         ;;
       STOP|TSTP)
-        trap_sig STOP 'printf "\033[2D"; info "Stopping execution."'
+        trap_sig STOP 'builtin printf "\033[2D"; info "Stopping execution."'
         ;;
       TTIN)
         trap_sig TTIN 'trace "Attempting to read in from the tty while in the background."'
@@ -772,7 +772,7 @@ function parse_args() {
     fi
     local var="${opts_var[$index]}"
     debug "Set '$var' to '$val'"
-    eval "$var=\"$val\""
+    builtin eval "$var=\"$val\""
     return $EX_OK
   }
   function arg_left_in_opt_str() {
@@ -857,25 +857,25 @@ function print_usage() {
     local -i len=$1
     local str="$2"
     local str="$2"
-    printf "%*s" "$((len - ${#str}))" "$pad"
-    printf '%s' "$str"
+    builtin printf "%*s" "$((len - ${#str}))" "$pad"
+    builtin printf '%s' "$str"
   }
   function pad_left() {
     local -i len=$1
     local str="$2"
-    printf '%s' "$str"
-    printf "%*.${len}s" "$((len - ${#str}))" "$pad"
+    builtin printf '%s' "$str"
+    builtin printf "%*.${len}s" "$((len - ${#str}))" "$pad"
   }
-  echo "$PROGRAM_NAME -- $VERSION"
+  builtin echo "$PROGRAM_NAME -- $VERSION"
   local prefix='Usage:'
   local syn
   for syn in "${USAGE[@]}"; do
     pad_left 7 "$prefix"
-    echo "$(basename $0) $syn"
+    builtin echo "$(/bin/basename $0) $syn"
     prefix=''
   done
-  echo "$EXPLANATION"
-  echo
+  builtin echo "$EXPLANATION"
+  builtin echo
   local -i index
   for index in "${!opts_help[@]}"; do
     local short="${opts_short[$index]}"
@@ -893,11 +893,11 @@ function print_usage() {
     fi
     pad_left "$((max_len_long + 1))" "$long"
     pad_left "$((max_len_arg + 2 + ${#ITALIC} + ${#RESET}))" "${ITALIC}$argument${RESET}"
-    printf '%s' "$helptext"
-    echo
+    builtin printf '%s' "$helptext"
+    builtin echo
   done
-  echo
-  echo "$DESCRIPTION"
+  builtin echo
+  builtin echo "$DESCRIPTION"
   return $EX_OK
 }
 
@@ -913,8 +913,8 @@ function print_usage() {
 #
 function print_version() {
   trace 'Printing version.'
-  echo "$PROGRAM_NAME version: $VERSION"
-  echo "$LICENCE"
+  builtin echo "$PROGRAM_NAME version: $VERSION"
+  builtin echo "$LICENCE"
 }
 
 
@@ -938,7 +938,7 @@ function declare_stack() {
   debug "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
   declare -ag $_stk
   declare -ig $_stk_i
-  eval "$_stk_i=0"
+  builtin eval "$_stk_i=0"
 }
 
 ##
@@ -956,7 +956,7 @@ function push() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
   debug "Pushing variable '$2' to stack '$_stk'."
-  eval "$_stk[\$$_stk_i]=\"$2\""
+  builtin eval "$_stk[\$$_stk_i]=\"$2\""
   let "$_stk_i = $_stk_i + 1"
 }
 
@@ -975,14 +975,14 @@ function pop() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
   local _val="$2"
-  if eval "(( $_stk_i < 1 ))"; then
+  if builtin eval "(( $_stk_i < 1 ))"; then
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
   debug "Popping a variable from stack '$_stk'."
   let "$_stk_i = $_stk_i - 1"
-  eval "$_val=\"\${$_stk[\$$_stk_i]}\""
-  eval "unset $_stk[\$$_stk_i]"
+  builtin eval "$_val=\"\${$_stk[\$$_stk_i]}\""
+  builtin eval "unset $_stk[\$$_stk_i]"
 }
 
 ##
@@ -1000,12 +1000,12 @@ function peek() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
   local _val="$2"
-  if eval "(( $_stk_i < 1 ))"; then
+  if builtin eval "(( $_stk_i < 1 ))"; then
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
   debug "Peeking variable from stack '$_stk'."
-  eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
+  builtin eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
 }
 
 
@@ -1025,7 +1025,7 @@ function declare_queue() {
   debug "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
   declare -ag $_que
   declare -ig $_que_i
-  eval "$_que_i=0"
+  builtin eval "$_que_i=0"
 }
 
 ##
@@ -1043,7 +1043,7 @@ function offer() {
   local _que="$1"
   local _que_i="${_que}_i"
   debug "offering variable '$2' to queue '$_que'."
-  eval "$_que[\$$_que_i]=\"$2\""
+  builtin eval "$_que[\$$_que_i]=\"$2\""
   let "$_que_i = $_que_i + 1"
 }
 
@@ -1062,18 +1062,18 @@ function poll() {
   local _que="$1"
   local _que_i="${_que}_i"
   local _val="$2"
-  if eval "(( $_que_i < 1 ))"; then
+  if builtin eval "(( $_que_i < 1 ))"; then
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
   debug "Popping a variable from queue '$_que'."
-  eval "$_val=\"\${$_que[0]}\""
+  builtin eval "$_val=\"\${$_que[0]}\""
   let "$_que_i = $_que_i - 1"
   local index
   for ((index=0;index<$_que_i;index++)); do
-    eval "$_que[$index]=\"\${$_que[(( $index + 1 ))]}\""
+    builtin eval "$_que[$index]=\"\${$_que[(( $index + 1 ))]}\""
   done
-  eval "unset $_que[\$$_que_i]"
+  builtin eval "unset $_que[\$$_que_i]"
 }
 
 ##
@@ -1090,12 +1090,12 @@ function peeq() {
   local _que="$1"
   local _que_i="${_que}_i"
   local _val="$2"
-  if eval "(( $_que_i < 1 ))"; then
+  if builtin eval "(( $_que_i < 1 ))"; then
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
   debug "Peeking a variable from queue '$_que'."
-  eval "$_val=\"\${$_que[0]}\""
+  builtin eval "$_val=\"\${$_que[0]}\""
 }
 
 
@@ -1126,7 +1126,7 @@ function random() {
   trace "Generating random number in [$from, $to]."
   local -i offset=$((from - 1))
   local -i mod=$((to - offset))
-  eval "$_var=$(((RANDOM % mod) + 1 + offset))"
+  builtin eval "$_var=$(((RANDOM % mod) + 1 + offset))"
 }
 
 ##
@@ -1139,7 +1139,7 @@ function random() {
 #   $EX_ERR if file already exists.
 #
 function lock() {
-  local lockfile="/tmp/$(basename "$0")$1.lk"
+  local lockfile="/tmp/$(/bin/basename "$0")$1.lk"
   if [[ -f "$lockfile" ]]; then
     fatal "Lockfile($lockfile) exists!"
     exit $EX_ERR
@@ -1159,7 +1159,7 @@ function lock() {
 #   None
 #
 function unlock() {
-  local lockfile="/tmp/$(basename "$0")$1.lk"
+  local lockfile="/tmp/$(/bin/basename "$0")$1.lk"
   if [[ -f "$lockfile" ]]; then
     rm "$lockfile"
     debug "Deleted lockfile '$lockfile'"
@@ -1181,37 +1181,37 @@ function extract () {
     trace "Trying to extract file '$1'."
     case $1 in
       *.tar.bz2)
-        tar xvjf $1
+        /bin/tar xvjf $1
         ;;
       *.tar.gz)
-        tar xvzf $1
+        /bin/tar xvzf $1
         ;;
       *.bz2)
-        bunzip2 $1
+        /bin/bunzip2 $1
         ;;
       *.rar)
-        rar x $1
+        /bin/rar x $1
         ;;
       *.gz)
-        gunzip $1
+        /bin/gunzip $1
         ;;
       *.tar)
-        tar xvf $1
+        /bin/tar xvf $1
         ;;
       *.tbz2)
-        tar xvjf $1
+        /bin/tar xvjf $1
         ;;
       *.tgz)
-        tar xvzf $1
+        /bin/tar xvzf $1
         ;;
       *.zip)
-        unzip $1
+        /bin/unzip $1
         ;;
       *.Z)
-        uncompress $1
+        /bin/uncompress $1
         ;;
       *.7z)
-        7z x $1
+        /bin/7z x $1
         ;;
       *)
         error "Could not identify the file type of '$1'."

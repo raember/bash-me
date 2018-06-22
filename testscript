@@ -70,4 +70,6 @@ info 'info'
 warn 'warn'
 error 'error'
 fatal 'fatal'
+NYI 'NYI'
+TODO 'TODO'
 unlock
