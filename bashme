@@ -42,7 +42,7 @@ declare -ri LL_QUIET=6
 # Variables
 declare -i loglevel=$LL_INFO
 declare logfile="./$(basename "$0").log"
-declare log2file=''
+declare log2file=
 declare log2std=1
 
 ##
@@ -67,8 +67,12 @@ declare log2std=1
 function log() {
   local lineno="${BASH_LINENO[2]}"
   local file="${BASH_SOURCE[3]}"
-  local func=" ${FUNCNAME[2]}(): "
-  local logmsg="$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func$4"
+  local func=" ${FUNCNAME[2]}()"
+  if [[ -z "$file" ]]; then
+    lineno="${BASH_LINENO[1]}"
+    file="${BASH_SOURCE[2]}"
+  fi
+  local logmsg="$4"
   if [[ -n "$log2std" ]]; then
     if (( $2 >= $LL_ERROR )); then
       echo -e "$1$logmsg$RESET" >&2
@@ -76,7 +80,7 @@ function log() {
       echo -e "$1$logmsg$RESET"
     fi
   fi
-  [[ -n "$log2file" ]] && echo "$logmsg" >> $logfile
+  [[ -n "$log2file" ]] && echo "$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
   return $EX_OK
 }
 
@@ -199,7 +203,7 @@ function fatal() {
 function NYI() {
   function log_nyi() {
     [[ $loglevel -gt $LL_INFO ]] && return $EX_OK
-    log "$FG_LYELLOW$BOLD" $LL_WARN '[TODO]' "$1"
+    log "$FG_LYELLOW$BOLD" $LL_WARN '[TODO] ' "$1"
     return $EX_OK
   }
   log_nyi "Not yet implemented!"
@@ -221,7 +225,7 @@ function NYI() {
 function TODO() {
   function log_todo() {
     [[ $loglevel -gt $LL_DEBUG ]] && return $EX_OK
-    log "$FG_GREEN$BOLD" $LL_DEBUG '[TODO]' "$1"
+    log "$FG_GREEN$BOLD" $LL_DEBUG '[TODO] ' "$1"
     return $EX_OK
   }
   log_todo "$1"

@@ -45,10 +45,12 @@ lock
 
 # Setup traps
 sig_err() {
+  unlock
   error "Well, I guess something went wrong."
   exit;
 }
 sig_int() {
+  unlock
   error "Bye bye."
   exit;
 }
@@ -61,3 +63,6 @@ trap_signals
 loglevel=$LL_TRACE
 
 
+#dialog --title 'Message' --msgbox 'Hello, world!' 5 20
+info 'hi there!'
+unlock
