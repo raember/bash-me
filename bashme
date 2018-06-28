@@ -81,7 +81,7 @@ function log() {
       builtin echo -e "$1$logmsg$RESET"
     fi
   fi
-  [[ -n "$log2file" ]] && builtin echo "$(date '+%Y-%M-%d %H:%m:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
+  [[ -n "$log2file" ]] && builtin echo "$(date '+%Y-%m-%d %H:%M:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
   return $EX_OK
 }
 
