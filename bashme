@@ -42,6 +42,7 @@ declare -ri LL_QUIET=6
 
 # Variables
 declare -i loglevel=$LL_INFO
+declare -i logfilelevel=$LL_TRACE
 declare logfile="./$(/bin/basename "$0").log"
 declare log2file=
 declare log2std=1
@@ -81,7 +82,7 @@ function log() {
       builtin echo -e "$1$logmsg$RESET"
     fi
   fi
-  [[ -n "$log2file" ]] && builtin echo "$(date '+%Y-%m-%d %H:%M:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
+  [[ -n "$log2file" ]] && (( $logfilelevel <= $2 )) && builtin echo "$(date '+%Y-%m-%d %H:%M:%S') $3($file:$lineno)$func: $logmsg" >> $logfile
   return $EX_OK
 }
 
