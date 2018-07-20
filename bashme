@@ -956,9 +956,11 @@ function declare_stack() {
 function push() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
-  debug "Pushing variable '$2' to stack '$_stk'."
   builtin eval "$_stk[\$$_stk_i]=\"$2\""
   let "$_stk_i = $_stk_i + 1"
+  local _stk_stk
+  builtin eval "_stk_stk=\"\${$_stk[*]}\""
+  debug "Pushed value '$2' to stack '$_stk': [$_stk_stk]<-"
 }
 
 ##
@@ -980,10 +982,14 @@ function pop() {
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
-  debug "Popping a variable from stack '$_stk'."
   let "$_stk_i = $_stk_i - 1"
   builtin eval "$_val=\"\${$_stk[\$$_stk_i]}\""
   builtin eval "unset $_stk[\$$_stk_i]"
+  local _val_val
+  builtin eval "_val_val=\$$_val"
+  local _stk_stk
+  builtin eval "_stk_stk=\"\${$_stk[*]}\""
+  debug "Popped '$_val_val' from stack '$_stk' to variable '$_val': [$_stk_stk]<-"
 }
 
 ##
@@ -1005,8 +1011,12 @@ function peek() {
     debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
-  debug "Peeking variable from stack '$_stk'."
   builtin eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
+  local _val_val
+  builtin eval "_val_val=\$$_val"
+  local _stk_stk
+  builtin eval "_stk_stk=\"\${$_stk[*]}\""
+  debug "Peeked '$_val_val' from stack '$_stk': [$_stk_stk]<-"
 }
 
 
@@ -1043,9 +1053,11 @@ function declare_queue() {
 function offer() {
   local _que="$1"
   local _que_i="${_que}_i"
-  debug "offering variable '$2' to queue '$_que'."
   builtin eval "$_que[\$$_que_i]=\"$2\""
   let "$_que_i = $_que_i + 1"
+  local _que_que
+  builtin eval "_que_que=\"\${$_que[*]}\""
+  debug "Offered variable '$2' to queue '$_que': [$_que_que]"
 }
 
 ##
@@ -1067,7 +1079,6 @@ function poll() {
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
-  debug "Popping a variable from queue '$_que'."
   builtin eval "$_val=\"\${$_que[0]}\""
   let "$_que_i = $_que_i - 1"
   local index
@@ -1075,6 +1086,11 @@ function poll() {
     builtin eval "$_que[$index]=\"\${$_que[(( $index + 1 ))]}\""
   done
   builtin eval "unset $_que[\$$_que_i]"
+  local _val_val
+  builtin eval "_val_val=\$$_val"
+  local _que_que
+  builtin eval "_que_que=\"\${$_que[*]}\""
+  debug "Polled '$_val_val' from queue '$_que': [$_que_que]"
 }
 
 ##
@@ -1095,8 +1111,12 @@ function peeq() {
     debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
-  debug "Peeking a variable from queue '$_que'."
   builtin eval "$_val=\"\${$_que[0]}\""
+  local _val_val
+  builtin eval "_val_val=\$$_val"
+  local _que_que
+  builtin eval "_que_que=\"\${$_que[*]}\""
+  debug "Peeked '$_val_val' from queue '$_que': [$_que_que]"
 }
 
 
