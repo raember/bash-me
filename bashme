@@ -541,101 +541,101 @@ function trap_signals() {
     trace "Trying to trap 'SIG$sig'."
     case $sig in
       EXIT)
-        trap_sig EXIT 'info "Exiting script. Cleaning up."'
+        trap_sig EXIT 'debug "SIGEXIT"'
         ;;
       ERR)
-        trap_sig ERR 'errcode=$?; error "An Error occurred: $errcode"; check_retval $errcode'
+        trap_sig ERR 'errcode=$?; error "SIGERR"; check_retval $errcode'
         ;;
       DEBUG)
-        trap_sig DEBUG 'info "Debugging."'
+        trap_sig DEBUG 'debug "SIGDEBUG"'
         ;;
       RETURN)
-        trap_sig RETURN 'info "Returning from sourced script."'
+        trap_sig RETURN 'debug "SIGRETURN"'
         ;;
       HUP)
-        trap_sig HUP 'fatal "Hangup. The controlling terminal closed."'
+        trap_sig HUP 'fatal "SIGHUP"'
         ;;
       INT)
-        trap_sig INT 'builtin printf "\033[2D"; info "Terminal interrupt signal. User wishes to interrupt the process."'
+        trap_sig INT 'builtin printf "\033[2D"; debug "SIGINT"'
         ;;
       QUIT)
-        trap_sig QUIT 'info "Terminal quit signal. User requests that the process quits and performs a core dump."'
+        trap_sig QUIT 'fatal "SIGQUIT"'
         ;;
       ILL)
-        trap_sig ILL 'error "Illegal Instruction: Process attempted to execute an illegal, malformed, unknown, or privileged instruction."'
+        trap_sig ILL 'error "SIGILL"'
         ;;
       TRAP)
-        trap_sig TRAP 'info "Trace/breakpoint trap. An exception (or trap) occured."'
+        trap_sig TRAP 'debug "SIGTRAP"'
         ;;
       ABRT)
-        trap_sig ABRT 'warn "Process abort signal. Got told to abort/terminate."'
+        trap_sig ABRT 'warn "SIGABRT"'
         ;;
       BUS)
-        trap_sig BUS 'error "Access to an undefined portion of a memory object."'
+        trap_sig BUS 'error "SIGBUS"'
         ;;
-      BUS)
-        trap_sig FPE 'error "Floating-point exception. Erroneous arithmetic operation."'
+      FPE)
+        trap_sig FPE 'error "SUGFPE"'
         ;;
       USR1)
-        trap_sig USR1 'info "USR1 received. User-defined condition."'
+        trap_sig USR1 'debug "SIGUSR1"'
         ;;
       USR2)
-        trap_sig USR2 'info "USR2 received. User-defined condition."'
+        trap_sig USR2 'debug "SIGUSR2"'
         ;;
       SEGV)
-        trap_sig SEGV 'error "Segmentation violation. Invalid virtual memory reference(segmentation fault)."'
+        trap_sig SEGV 'error "SIGSEGV"'
         ;;
       PIPE)
-        trap_sig PIPE 'error "Process attempted to write to a pipe without a process connected to the other end."'
+        trap_sig PIPE 'error "SIGPIPE"'
         ;;
       ALRM|VTALRM|PROF)
-        trap_sig ALRM 'info "The time limit specified in a call to a preceding alarm setting function (such as \"setitimer\") has elapsed."'
+        trap_sig ALRM 'debug "SIGALRM/SIGVTALRM/SIGPROF"'
         ;;
       TERM)
-        trap_sig TERM 'info "Process termination requested."'
+        trap_sig TERM 'debug "SIGTERM"'
         ;;
       STKFLT)
-        trap_sig STKFLT 'error "Stack fault. (i.e. popping when the stack is empty or pushing when it is full)."'
+        trap_sig STKFLT 'error "SIGSTKFLT"'
         ;;
       CHLD)
-        trap_sig CHLD 'info "Child process terminated/interrupted/resumed."'
+        trap_sig CHLD 'debug "SIGCHLD"'
         ;;
       CONT)
-        trap_sig CONT 'info "Continuing execution."'
+        trap_sig CONT 'debug "SIGCONT"'
         ;;
       STOP|TSTP)
-        trap_sig STOP 'builtin printf "\033[2D"; info "Stopping execution."'
+        trap_sig STOP 'builtin printf "\033[2D"; debug "SIGSTOP/SIGTSTP"'
         ;;
       TTIN)
-        trap_sig TTIN 'trace "Attempting to read in from the tty while in the background."'
+        trap_sig TTIN 'debug "SIGTTIN"'
         ;;
       TTOU)
-        trap_sig TTOU 'trace "Attempting to read out from the tty while in the background."'
+        trap_sig TTOU 'debug "SIGTTOU"'
         ;;
       URG)
-        trap_sig URG 'info "A socket has urgent or out-of-band data available to read."'
+        trap_sig URG 'debug "SIGURG"'
         ;;
       XCPU)
-        trap_sig XCPU 'fatal "CPU time limit exceeded."'
+        trap_sig XCPU 'fatal "SIGXCPU"'
         ;;
       XFSZ)
-        trap_sig XFSZ 'fatal "File size limit exceeded."'
+        trap_sig XFSZ 'fatal "SIGXFSZ"'
         ;;
       WINCH)
-        trap_sig WINCH 'info "Controlling terminal changed its size."'
+        trap_sig WINCH 'debug "SIGWINCH"'
         ;;
       POLL)
-        trap_sig POLL 'info "An event occurred on an explicitly watched file descriptor."'
+        trap_sig POLL 'debug "SIGPOLL"'
         ;;
       PWR)
-        trap_sig PWR 'fatal "The system experiences a power failure."'
+        trap_sig PWR 'fatal "SIGPWR"'
         ;;
       SYS)
-        trap_sig SYS 'error "The process passed a bad argument to a system call."'
+        trap_sig SYS 'error "SIGSYS"'
         ;;
       RTMIN*)
         local -i num
-        if [[ $sig =~ ^RTMIN\+([1-9]([0-5]|))$ ]]; then
+        if [[ $sig =~ ^RTMIN(\+[1-9]([0-5]|))$ ]]; then
           num=${BASH_REMATCH[1]}
         elif [[ $sig =~ ^RTMIN$ ]]; then
           num=0
@@ -643,11 +643,11 @@ function trap_signals() {
           error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "trace \"Received real-time signal MIN +$num.\""
+        trap_sig "$sig" "debug \"SIGRTMIN$num.\""
         ;;
       RTMAX*)
         local -i num
-        if [[ $sig =~ ^RTMAX\-([1-9]([0-4]|))$ ]]; then
+        if [[ $sig =~ ^RTMAX(\-[1-9]([0-4]|))$ ]]; then
           num=${BASH_REMATCH[1]}
         elif [[ $sig =~ ^RTMAX$ ]]; then
           num=0
@@ -655,7 +655,7 @@ function trap_signals() {
           error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "trace \"Received real-time signal MAX -$num.\""
+        trap_sig "$sig" "debug \"SIGRTMAX$num.\""
         ;;
       *)
         debug "Signal 'SIG$sig' unknown. Trying to trap anyway."
