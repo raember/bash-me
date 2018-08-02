@@ -46,6 +46,7 @@ declare -i logfilelevel=$LL_TRACE
 declare logfile="./$(/bin/basename "$0").log"
 declare log2file=
 declare log2std=1
+declare logbashme=1
 
 ##
 # Logs a message according to its log level.
@@ -261,39 +262,39 @@ declare -ri EX_OUTOFRANGE=255
 #
 function check_retval() {
   local retval="$1"
-  trace "Checking return value: '$retval'"
+  [[ -n "$logbashme" ]] && trace "Checking return value: '$retval'"
   if [[ $retval -gt 64 ]] && [[ $retval -lt 114 ]]; then
-    debug "Custom C/C++ return code according to /usr/include/sysexits.h detected."
+    [[ -n "$logbashme" ]] && debug "Custom C/C++ return code according to /usr/include/sysexits.h detected."
   elif [[ $retval -gt 128 ]] && [[ $retval -lt 166 ]]; then
-    debug "Custom fatal return value detected."
+    [[ -n "$logbashme" ]] && debug "Custom fatal return value detected."
   else
     case $retval in
       $EX_OK)
-        debug "Code exited normally."
+        [[ -n "$logbashme" ]] && debug "Code exited normally."
         ;;
       $EX_ERR)
-        debug "Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
+        [[ -n "$logbashme" ]] && debug "Catchall for general errors. Miscellaneous errors, such as 'divide by zero' and other impermissible operations."
         ;;
       $EX_MISSUSE)
-        debug "Misuse of shell builtins. Missing keyword or command or permission problem."
+        [[ -n "$logbashme" ]] && debug "Misuse of shell builtins. Missing keyword or command or permission problem."
         ;;
       $EX_CANNOTEXEC)
-        debug "Command invoked cannot execute. Permission problem or command is not an executable."
+        [[ -n "$logbashme" ]] && debug "Command invoked cannot execute. Permission problem or command is not an executable."
         ;;
       $EX_CMDNOTFOUND)
-        debug "Command not found. Possible problem with \$PATH or a typo."
+        [[ -n "$logbashme" ]] && debug "Command not found. Possible problem with \$PATH or a typo."
         ;;
       $EX_INVALARG)
-        debug "Invalid argument to exit. exit takes only integer args in the range 0 - 255."
+        [[ -n "$logbashme" ]] && debug "Invalid argument to exit. exit takes only integer args in the range 0 - 255."
         ;;
       $EX_INT)
-        debug "Command terminated by Control-C."
+        [[ -n "$logbashme" ]] && debug "Command terminated by Control-C."
         ;;
       $EX_OUTOFRANGE)
-        debug "Exit status out of range. exit takes only integer args in the range 0 - 255."
+        [[ -n "$logbashme" ]] && debug "Exit status out of range. exit takes only integer args in the range 0 - 255."
         ;;
       ?)
-        warn "Could not categorize return value appropriately."
+        [[ -n "$logbashme" ]] && warn "Could not categorize return value appropriately."
     esac
   fi
   return $retval
@@ -373,7 +374,7 @@ readonly RESET="$(tput sgr0)"
 #   None
 #
 function formatting_test() {
-  trace 'Printing formatting table.'
+  [[ -n "$logbashme" ]] && trace 'Printing formatting table.'
   builtin echo -e "Formattings:"
   builtin echo -e "BOLD:      ${BOLD}BOLD${RESET}."
   builtin echo -e "DIM:       ${DIM}DIM${RESET}."
@@ -429,7 +430,7 @@ function formatting_test() {
 #   None
 #
 function color_test() {
-  trace 'Printing color table.'
+  [[ -n "$logbashme" ]] && trace 'Printing color table.'
   builtin echo -e "Foreground:"
   builtin echo -en "FG_BLACK:      ${FG_BLACK}FG_BLACK${RESET}      "
   builtin echo -e  "FG_GRAY:     ${FG_GRAY}FG_GRAY${RESET}"
@@ -496,9 +497,9 @@ function trap_sig() {
   local -u sig="$1"
   sig="${1/SIG/}"
   if [[ "$2" = "-" ]]; then
-    trace "Removing trap of signal 'SIG$sig'."
+    [[ -n "$logbashme" ]] && trace "Removing trap of signal 'SIG$sig'."
     if ! trap "-" "$sig"; then
-      warn 'Could not release signal.'
+      [[ -n "$logbashme" ]] && warn 'Could not release signal.'
       return $EX_ERR
     fi
   else
@@ -508,16 +509,16 @@ function trap_sig() {
     local delegate=$(cat <<EOF
           $2
           if type $callback &> /dev/null; then
-            trace "Calling callback function '$callback()'."
+            [[ -n "$logbashme" ]] && trace "Calling callback function '$callback()'."
             $callback $cb_arg
           else
-            error "Callback function '$callback()' not defined."
+            [[ -n "$logbashme" ]] && error "Callback function '$callback()' not defined."
           fi
 EOF
     )
-    trace "Trapping 'SIG$sig'. Callback: $callback()."
+    [[ -n "$logbashme" ]] && trace "Trapping 'SIG$sig'. Callback: $callback()."
     if ! builtin trap "$delegate" "$sig"; then
-      warn "Could not trap signal 'SIG$sig'."
+      [[ -n "$logbashme" ]] && warn "Could not trap signal 'SIG$sig'."
       return $EX_ERR
     fi
   fi
@@ -535,103 +536,103 @@ EOF
 #   Success/Failure
 #
 function trap_signals() {
-  trace 'Trapping signals.'
+  [[ -n "$logbashme" ]] && trace 'Trapping signals.'
   local -u sig
   for sig in "${traps[@]}"; do
-    trace "Trying to trap 'SIG$sig'."
+    [[ -n "$logbashme" ]] && trace "Trying to trap 'SIG$sig'."
     case $sig in
       EXIT)
-        trap_sig EXIT 'debug "SIGEXIT"'
+        trap_sig EXIT '[[ -n "$logbashme" ]] && debug "SIGEXIT"'
         ;;
       ERR)
-        trap_sig ERR 'errcode=$?; error "SIGERR"; check_retval $errcode'
+        trap_sig ERR 'errcode=$?; [[ -n "$logbashme" ]] && error "SIGERR"; check_retval $errcode'
         ;;
       DEBUG)
-        trap_sig DEBUG 'debug "SIGDEBUG"'
+        trap_sig DEBUG '[[ -n "$logbashme" ]] && debug "SIGDEBUG"'
         ;;
       RETURN)
-        trap_sig RETURN 'debug "SIGRETURN"'
+        trap_sig RETURN '[[ -n "$logbashme" ]] && debug "SIGRETURN"'
         ;;
       HUP)
-        trap_sig HUP 'fatal "SIGHUP"'
+        trap_sig HUP '[[ -n "$logbashme" ]] && fatal "SIGHUP"'
         ;;
       INT)
-        trap_sig INT 'builtin printf "\033[2D"; debug "SIGINT"'
+        trap_sig INT 'builtin printf "\033[2D"; [[ -n "$logbashme" ]] && debug "SIGINT"'
         ;;
       QUIT)
-        trap_sig QUIT 'fatal "SIGQUIT"'
+        trap_sig QUIT '[[ -n "$logbashme" ]] && fatal "SIGQUIT"'
         ;;
       ILL)
-        trap_sig ILL 'error "SIGILL"'
+        trap_sig ILL '[[ -n "$logbashme" ]] && error "SIGILL"'
         ;;
       TRAP)
-        trap_sig TRAP 'debug "SIGTRAP"'
+        trap_sig TRAP '[[ -n "$logbashme" ]] && debug "SIGTRAP"'
         ;;
       ABRT)
-        trap_sig ABRT 'warn "SIGABRT"'
+        trap_sig ABRT '[[ -n "$logbashme" ]] && warn "SIGABRT"'
         ;;
       BUS)
-        trap_sig BUS 'error "SIGBUS"'
+        trap_sig BUS '[[ -n "$logbashme" ]] && error "SIGBUS"'
         ;;
       FPE)
-        trap_sig FPE 'error "SUGFPE"'
+        trap_sig FPE '[[ -n "$logbashme" ]] && error "SUGFPE"'
         ;;
       USR1)
-        trap_sig USR1 'debug "SIGUSR1"'
+        trap_sig USR1 '[[ -n "$logbashme" ]] && debug "SIGUSR1"'
         ;;
       USR2)
-        trap_sig USR2 'debug "SIGUSR2"'
+        trap_sig USR2 '[[ -n "$logbashme" ]] && debug "SIGUSR2"'
         ;;
       SEGV)
-        trap_sig SEGV 'error "SIGSEGV"'
+        trap_sig SEGV '[[ -n "$logbashme" ]] && error "SIGSEGV"'
         ;;
       PIPE)
-        trap_sig PIPE 'error "SIGPIPE"'
+        trap_sig PIPE '[[ -n "$logbashme" ]] && error "SIGPIPE"'
         ;;
       ALRM|VTALRM|PROF)
-        trap_sig ALRM 'debug "SIGALRM/SIGVTALRM/SIGPROF"'
+        trap_sig ALRM '[[ -n "$logbashme" ]] && debug "SIGALRM/SIGVTALRM/SIGPROF"'
         ;;
       TERM)
-        trap_sig TERM 'debug "SIGTERM"'
+        trap_sig TERM '[[ -n "$logbashme" ]] && debug "SIGTERM"'
         ;;
       STKFLT)
-        trap_sig STKFLT 'error "SIGSTKFLT"'
+        trap_sig STKFLT '[[ -n "$logbashme" ]] && error "SIGSTKFLT"'
         ;;
       CHLD)
-        trap_sig CHLD 'debug "SIGCHLD"'
+        trap_sig CHLD '[[ -n "$logbashme" ]] && debug "SIGCHLD"'
         ;;
       CONT)
-        trap_sig CONT 'debug "SIGCONT"'
+        trap_sig CONT '[[ -n "$logbashme" ]] && debug "SIGCONT"'
         ;;
       STOP|TSTP)
-        trap_sig STOP 'builtin printf "\033[2D"; debug "SIGSTOP/SIGTSTP"'
+        trap_sig STOP 'builtin printf "\033[2D"; [[ -n "$logbashme" ]] && debug "SIGSTOP/SIGTSTP"'
         ;;
       TTIN)
-        trap_sig TTIN 'debug "SIGTTIN"'
+        trap_sig TTIN '[[ -n "$logbashme" ]] && debug "SIGTTIN"'
         ;;
       TTOU)
-        trap_sig TTOU 'debug "SIGTTOU"'
+        trap_sig TTOU '[[ -n "$logbashme" ]] && debug "SIGTTOU"'
         ;;
       URG)
-        trap_sig URG 'debug "SIGURG"'
+        trap_sig URG '[[ -n "$logbashme" ]] && debug "SIGURG"'
         ;;
       XCPU)
-        trap_sig XCPU 'fatal "SIGXCPU"'
+        trap_sig XCPU '[[ -n "$logbashme" ]] && fatal "SIGXCPU"'
         ;;
       XFSZ)
-        trap_sig XFSZ 'fatal "SIGXFSZ"'
+        trap_sig XFSZ '[[ -n "$logbashme" ]] && fatal "SIGXFSZ"'
         ;;
       WINCH)
-        trap_sig WINCH 'debug "SIGWINCH"'
+        trap_sig WINCH '[[ -n "$logbashme" ]] && debug "SIGWINCH"'
         ;;
       POLL)
-        trap_sig POLL 'debug "SIGPOLL"'
+        trap_sig POLL '[[ -n "$logbashme" ]] && debug "SIGPOLL"'
         ;;
       PWR)
-        trap_sig PWR 'fatal "SIGPWR"'
+        trap_sig PWR '[[ -n "$logbashme" ]] && fatal "SIGPWR"'
         ;;
       SYS)
-        trap_sig SYS 'error "SIGSYS"'
+        trap_sig SYS '[[ -n "$logbashme" ]] && error "SIGSYS"'
         ;;
       RTMIN*)
         local -i num
@@ -640,10 +641,10 @@ function trap_signals() {
         elif [[ $sig =~ ^RTMIN$ ]]; then
           num=0
         else
-          error "Signal 'SIG$sig' unknown. Cannot trap."
+          [[ -n "$logbashme" ]] && error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "debug \"SIGRTMIN$num.\""
+        trap_sig "$sig" "[[ -n "$logbashme" ]] && debug \"SIGRTMIN$num.\""
         ;;
       RTMAX*)
         local -i num
@@ -652,14 +653,14 @@ function trap_signals() {
         elif [[ $sig =~ ^RTMAX$ ]]; then
           num=0
         else
-          error "Signal 'SIG$sig' unknown. Cannot trap."
+          [[ -n "$logbashme" ]] && error "Signal 'SIG$sig' unknown. Cannot trap."
           continue
         fi
-        trap_sig "$sig" "debug \"SIGRTMAX$num.\""
+        trap_sig "$sig" "[[ -n "$logbashme" ]] && debug \"SIGRTMAX$num.\""
         ;;
       *)
-        debug "Signal 'SIG$sig' unknown. Trying to trap anyway."
-        trap_sig "$sig" 'trace "Recieved "SIG$sig" signal."'
+        [[ -n "$logbashme" ]] && debug "Signal 'SIG$sig' unknown. Trying to trap anyway."
+        trap_sig "$sig" '[[ -n "$logbashme" ]] && trace "Recieved "SIG$sig" signal."'
         ;;
     esac
   done
@@ -708,7 +709,7 @@ declare DESCRIPTION
 #   None
 #
 function define_opt() {
-  debug "Defining option '$1'. Short: '$2'. Long: '$3'. Argument: '$4'."
+  [[ -n "$logbashme" ]] && debug "Defining option '$1'. Short: '$2'. Long: '$3'. Argument: '$4'."
   opts_var+=("$1")
   opts_short+=("$2")
   opts_long+=("$3")
@@ -736,7 +737,7 @@ function define_opt() {
 function parse_args() {
   # Define helper functions
   function find_matching_opt() {
-    trace "Matching '$opt_str' against the defined options."
+    [[ -n "$logbashme" ]] && trace "Matching '$opt_str' against the defined options."
     for index in "${!opts_short[@]}"; do
       local short="${opts_short[$index]}"
       local long="${opts_long[$index]}"
@@ -746,55 +747,55 @@ function parse_args() {
       if [[ $opt_str =~ ^\s*($short|$long)(.*)$ ]]; then
         opt="${BASH_REMATCH[1]}"
         opt_str="${BASH_REMATCH[2]}"
-        trace "Found '$opt'. Remaining string: '$opt_str'."
+        [[ -n "$logbashme" ]] && trace "Found '$opt'. Remaining string: '$opt_str'."
         return $EX_OK
       fi
     done
-    trace 'No match found.'
+    [[ -n "$logbashme" ]] && trace 'No match found.'
     return $EX_ERR
   }
   function expects_argument() {
-    trace "Checking if an argument is expected."
+    [[ -n "$logbashme" ]] && trace "Checking if an argument is expected."
     if [[ -n "${opts_arg[$index]}" ]]; then
-      trace "Argument '${opts_arg[$index]}' expected."
+      [[ -n "$logbashme" ]] && trace "Argument '${opts_arg[$index]}' expected."
       return $EX_OK
     fi
-    trace 'No argument expected.'
+    [[ -n "$logbashme" ]] && trace 'No argument expected.'
     return $EX_ERR
   }
   function set_option_variable() {
-    trace "Setting argument for '${opts_var[$index]}'."
+    [[ -n "$logbashme" ]] && trace "Setting argument for '${opts_var[$index]}'."
     local val="$1"
     if [[ -z "$val" ]]; then
       if [[ ! $opt =~ ^\s*(${opts_short[$index]}|${opts_long[$index]})\s*(.*)$ ]]; then
-        fatal "Could not match '$opt' with the selected option."
+        [[ -n "$logbashme" ]] && fatal "Could not match '$opt' with the selected option."
       fi
       val="${BASH_REMATCH[2]}"
     fi
     local var="${opts_var[$index]}"
-    debug "Set '$var' to '$val'"
+    [[ -n "$logbashme" ]] && debug "Set '$var' to '$val'"
     builtin eval "$var=\"$val\""
     return $EX_OK
   }
   function arg_left_in_opt_str() {
-    trace 'Checking if the required argument is in the remaining string.'
+    [[ -n "$logbashme" ]] && trace 'Checking if the required argument is in the remaining string.'
     if [[ -z "$opt_str" ]]; then
-      trace 'No remaining argument in string.'
+      [[ -n "$logbashme" ]] && trace 'No remaining argument in string.'
       return $EX_ERR
     fi
-    trace "Argument determined to be '$opt_str'."
+    [[ -n "$logbashme" ]] && trace "Argument determined to be '$opt_str'."
     return $EX_OK
   }
 
   # Do it
-  trace "Parsing options."
+  [[ -n "$logbashme" ]] && trace "Parsing options."
   local -a args_old=("$@")
   local opt_str
   local last_opt
   for opt_str in "$@"; do
-    trace "Consuming string '$opt_str'."
+    [[ -n "$logbashme" ]] && trace "Consuming string '$opt_str'."
     if [[ -n "$last_opt" ]]; then
-      trace "Deduced to be argument for '$last_opt'."
+      [[ -n "$logbashme" ]] && trace "Deduced to be argument for '$last_opt'."
       opt="$last_opt"
       last_opt=""
       set_option_variable "$opt_str"
@@ -811,7 +812,7 @@ function parse_args() {
           ignore=true
           break
         else
-          trace "Marking next string to be the argument for the current option."
+          [[ -n "$logbashme" ]] && trace "Marking next string to be the argument for the current option."
           last_opt="$opt"
           break
         fi
@@ -824,11 +825,11 @@ function parse_args() {
     done
     # No more options in the current opt_str
     if [[ -z "$ignore" ]] && [[ -n "$opt_str" ]]; then
-      debug "Adding '$opt_str' to 'args'."
+      [[ -n "$logbashme" ]] && debug "Adding '$opt_str' to 'args'."
       args+=("$opt_str")
     fi
   done
-  trace "Finished parsing options."
+  [[ -n "$logbashme" ]] && trace "Finished parsing options."
   return $EX_OK
 }
 
@@ -853,7 +854,7 @@ function parse_args() {
 #   None
 #
 function print_usage() {
-  trace 'Printing usage.'
+  [[ -n "$logbashme" ]] && trace 'Printing usage.'
   function pad_right() {
     local -i len=$1
     local str="$2"
@@ -913,7 +914,7 @@ function print_usage() {
 #   None
 #
 function print_version() {
-  trace 'Printing version.'
+  [[ -n "$logbashme" ]] && trace 'Printing version.'
   builtin echo "$PROGRAM_NAME version: $VERSION"
   builtin echo "$LICENCE"
 }
@@ -936,7 +937,7 @@ function print_version() {
 function declare_stack() {
   local _stk="$1"
   local _stk_i="${_stk}_i"
-  debug "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
+  [[ -n "$logbashme" ]] && debug "Declaring variable '$_stk' as stack with stack pointer '$_stk_i'."
   declare -ag $_stk
   declare -ig $_stk_i
   builtin eval "$_stk_i=0"
@@ -960,7 +961,7 @@ function push() {
   let "$_stk_i = $_stk_i + 1"
   local _stk_stk
   builtin eval "_stk_stk=\"\${$_stk[*]}\""
-  debug "Pushed value '$2' to stack '$_stk': [$_stk_stk]<-"
+  [[ -n "$logbashme" ]] && debug "Pushed value '$2' to stack '$_stk': [$_stk_stk]<-"
 }
 
 ##
@@ -979,7 +980,7 @@ function pop() {
   local _stk_i="${_stk}_i"
   local _val="$2"
   if builtin eval "(( $_stk_i < 1 ))"; then
-    debug "Stack '$_stk' is empty."
+    [[ -n "$logbashme" ]] && debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
   let "$_stk_i = $_stk_i - 1"
@@ -989,7 +990,7 @@ function pop() {
   builtin eval "_val_val=\$$_val"
   local _stk_stk
   builtin eval "_stk_stk=\"\${$_stk[*]}\""
-  debug "Popped '$_val_val' from stack '$_stk' to variable '$_val': [$_stk_stk]<-"
+  [[ -n "$logbashme" ]] && debug "Popped '$_val_val' from stack '$_stk' to variable '$_val': [$_stk_stk]<-"
 }
 
 ##
@@ -1008,7 +1009,7 @@ function peek() {
   local _stk_i="${_stk}_i"
   local _val="$2"
   if builtin eval "(( $_stk_i < 1 ))"; then
-    debug "Stack '$_stk' is empty."
+    [[ -n "$logbashme" ]] && debug "Stack '$_stk' is empty."
     return $EX_ERR
   fi
   builtin eval "$_val=\"\${$_stk[(( \$$_stk_i - 1 ))]}\""
@@ -1016,7 +1017,7 @@ function peek() {
   builtin eval "_val_val=\$$_val"
   local _stk_stk
   builtin eval "_stk_stk=\"\${$_stk[*]}\""
-  debug "Peeked '$_val_val' from stack '$_stk': [$_stk_stk]<-"
+  [[ -n "$logbashme" ]] && debug "Peeked '$_val_val' from stack '$_stk': [$_stk_stk]<-"
 }
 
 
@@ -1033,7 +1034,7 @@ function peek() {
 function declare_queue() {
   local _que="$1"
   local _que_i="${_que}_i"
-  debug "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
+  [[ -n "$logbashme" ]] && debug "Declaring variable '$_que' as queue with queue pointer '$_que_i'."
   declare -ag $_que
   declare -ig $_que_i
   builtin eval "$_que_i=0"
@@ -1057,7 +1058,7 @@ function offer() {
   let "$_que_i = $_que_i + 1"
   local _que_que
   builtin eval "_que_que=\"\${$_que[*]}\""
-  debug "Offered variable '$2' to queue '$_que': [$_que_que]"
+  [[ -n "$logbashme" ]] && debug "Offered variable '$2' to queue '$_que': [$_que_que]"
 }
 
 ##
@@ -1076,7 +1077,7 @@ function poll() {
   local _que_i="${_que}_i"
   local _val="$2"
   if builtin eval "(( $_que_i < 1 ))"; then
-    debug "Queue '$_que' is empty."
+    [[ -n "$logbashme" ]] && debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
   builtin eval "$_val=\"\${$_que[0]}\""
@@ -1090,7 +1091,7 @@ function poll() {
   builtin eval "_val_val=\$$_val"
   local _que_que
   builtin eval "_que_que=\"\${$_que[*]}\""
-  debug "Polled '$_val_val' from queue '$_que': [$_que_que]"
+  [[ -n "$logbashme" ]] && debug "Polled '$_val_val' from queue '$_que': [$_que_que]"
 }
 
 ##
@@ -1108,7 +1109,7 @@ function peeq() {
   local _que_i="${_que}_i"
   local _val="$2"
   if builtin eval "(( $_que_i < 1 ))"; then
-    debug "Queue '$_que' is empty."
+    [[ -n "$logbashme" ]] && debug "Queue '$_que' is empty."
     return $EX_ERR
   fi
   builtin eval "$_val=\"\${$_que[0]}\""
@@ -1116,7 +1117,7 @@ function peeq() {
   builtin eval "_val_val=\$$_val"
   local _que_que
   builtin eval "_que_que=\"\${$_que[*]}\""
-  debug "Peeked '$_val_val' from queue '$_que': [$_que_que]"
+  [[ -n "$logbashme" ]] && debug "Peeked '$_val_val' from queue '$_que': [$_que_que]"
 }
 
 
@@ -1141,10 +1142,10 @@ function random() {
   local -i to="$2"
   local _var="$3"
   if (( from > to )); then
-    error "'$from' is greater than '$to'."
+    [[ -n "$logbashme" ]] && error "'$from' is greater than '$to'."
     return $EX_ERR
   fi
-  trace "Generating random number in [$from, $to]."
+  [[ -n "$logbashme" ]] && trace "Generating random number in [$from, $to]."
   local -i offset=$((from - 1))
   local -i mod=$((to - offset))
   builtin eval "$_var=$(((RANDOM % mod) + 1 + offset))"
@@ -1166,7 +1167,7 @@ function lock() {
     exit $EX_ERR
   else
     touch "$lockfile"
-    debug "Locked '$lockfile'."
+    [[ -n "$logbashme" ]] && debug "Locked '$lockfile'."
   fi
 }
 
@@ -1183,7 +1184,7 @@ function unlock() {
   local lockfile="/tmp/$(/bin/basename "$0")$1.lk"
   if [[ -f "$lockfile" ]]; then
     rm "$lockfile"
-    debug "Deleted lockfile '$lockfile'"
+    [[ -n "$logbashme" ]] && debug "Deleted lockfile '$lockfile'"
   fi
 }
 
@@ -1199,7 +1200,7 @@ function unlock() {
 #
 function extract () {
   if [ -f $1 ] ; then
-    trace "Trying to extract file '$1'."
+    [[ -n "$logbashme" ]] && trace "Trying to extract file '$1'."
     case $1 in
       *.tar.bz2)
         /bin/tar xvjf $1
@@ -1235,16 +1236,133 @@ function extract () {
         /bin/7z x $1
         ;;
       *)
-        error "Could not identify the file type of '$1'."
+        [[ -n "$logbashme" ]] && error "Could not identify the file type of '$1'."
         return $EX_ERR
         ;;
     esac
     if check_retval $?; then
-      debug "Extracted file successfully."
+      [[ -n "$logbashme" ]] && debug "Extracted file successfully."
     else
-      error "Could not extract file."
+      [[ -n "$logbashme" ]] && error "Could not extract file."
     fi
   else
-    error "'$1' is not a valid file."
+    [[ -n "$logbashme" ]] && error "'$1' is not a valid file."
   fi
+}
+
+
+declare -a TAB_COMPLETIONS=()
+declare -a _TAB_POSSIBLE_COMPLETIONS=()
+declare _TAB_CYCLE_MODE=
+declare -i _TAB_POSSIBLE_COMPLETIONS_INDEX=0
+declare -i _TAB_ROWS=0
+##
+# Enables custom tab completion for the read builtin.
+# Globals:
+#   TAB_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS
+#   _TAB_CYCLE_MODE
+#   _TAB_POSSIBLE_COMPLETIONS_INDEX
+#   _TAB_ROWS
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+enable_tab_completion() {
+  set -o emacs
+  bind -x '"\t":"_tab_complete"'
+}
+disable_tab_completion() {
+  bind -x '"\t":""'
+}
+clean_tab_suggestions() {
+  tput dl $_TAB_ROWS
+}
+_tab_complete() {
+  [[ -n "$_TAB_CYCLE_MODE" ]] && \
+    _tab_choice_exists $READLINE_LINE || \
+      _tab_compile_possible_completions $READLINE_LINE
+  _tab_list_possible_completions $READLINE_LINE
+}
+_tab_list_possible_completions() {
+  _TAB_CYCLE_MODE=
+  case ${#_TAB_POSSIBLE_COMPLETIONS[@]} in
+    0) # Exit Cycle mode.
+      tput sc
+      _tab_clear
+      tput rc
+      ;;
+    1) # Clear remaining printed list. Select item. Exit Cycle mode.
+      tput sc
+      _tab_clear
+      tput rc
+      _tab_print_suggestion
+      ;;
+    *) # Print list. Select item. Enter Cycle mode.
+      _tab_list_completions $_TAB_POSSIBLE_COMPLETIONS_INDEX
+      _tab_print_suggestion
+      _TAB_CYCLE_MODE=1
+      ;;
+  esac
+}
+_tab_print_suggestion() {
+  READLINE_LINE="${_TAB_POSSIBLE_COMPLETIONS[$_TAB_POSSIBLE_COMPLETIONS_INDEX]}"
+  READLINE_POINT="${#READLINE_LINE}"
+  _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((_TAB_POSSIBLE_COMPLETIONS_INDEX+1)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
+}
+_tab_list_completions() {
+  tput sc
+  _tab_clear
+  _TAB_ROWS=1
+  local -i highlight=-1
+  [[ -n "$1" ]] && highlight=$1
+  local -i maxwidth=$(tput cols)
+  local -i width=0
+  local first=1
+  local -i index
+  local completion
+  for ((index=0;index<${#_TAB_POSSIBLE_COMPLETIONS[@]};index++)); do
+    completion="${_TAB_POSSIBLE_COMPLETIONS[$index]}"
+    width=$((width+1+${#completion}))
+    if [[ -n "$first" ]]; then
+      first=
+    else
+      printf '%s' ' '
+    fi
+    if ((width >= maxwidth)); then
+      tput cud1
+      ((_TAB_ROWS++))
+      width=$((_OFFSET+${#completion}))
+    fi
+    if ((highlight==index)); then
+      tput rev
+      printf '%s' "$completion"
+      tput sgr0
+    else
+      printf '%s' "$completion"
+    fi
+  done
+  tput rc
+}
+_tab_clear() {
+  tput cud1
+  tput dl $_TAB_ROWS
+}
+_tab_compile_possible_completions() { # start string
+  _TAB_POSSIBLE_COMPLETIONS=()
+  local tab_option
+  for tab_option in "${TAB_COMPLETIONS[@]}"; do
+    if [[ $tab_option =~ ^$1.*$ ]]; then
+      _TAB_POSSIBLE_COMPLETIONS+=("$tab_option")
+    fi
+  done
+  _TAB_POSSIBLE_COMPLETIONS_INDEX=0
+}
+_tab_choice_exists() { # choice
+  local tab_option
+  for tab_option in "${TAB_COMPLETIONS[@]}"; do
+    [[ "$tab_option" == "$1" ]] && return $EX_OK
+  done
+  return $EX_ERR
 }

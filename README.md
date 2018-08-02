@@ -327,3 +327,6 @@ else
   error "Or maybe it didn't?..."
 fi
 ```
+
+### Custom tab completion for `read` builtin
+To enable custom tab completion for the `read` builtin, one can use the `enable_tab_completion`-method. The custom options can be filled into the `TAB_COMPLETIONS`-array. To clean the area of the suggestions after the read command, use `clean_tab_suggestions`. To disable the feature, simply issue `disable_tab_completion`.
