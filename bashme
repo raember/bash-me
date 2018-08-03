@@ -1256,6 +1256,7 @@ declare -a _TAB_POSSIBLE_COMPLETIONS=()
 declare _TAB_CYCLE_MODE=
 declare -i _TAB_POSSIBLE_COMPLETIONS_INDEX=0
 declare -i _TAB_ROWS=0
+declare _tab_restore
 ##
 # Enables custom tab completion for the read builtin.
 # Globals:
@@ -1269,23 +1270,38 @@ declare -i _TAB_ROWS=0
 # Returns:
 #   None
 #
-enable_tab_completion() {
+function enable_tab_completion() {
+  _tab_restore=$(set +o | grep emacs)
   set -o emacs
   bind -x '"\t":"_tab_complete"'
 }
-disable_tab_completion() {
-  bind -x '"\t":""'
+##
+# Disables custom tab completion for the read builtin.
+# Globals:
+#   TAB_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS
+#   _TAB_CYCLE_MODE
+#   _TAB_POSSIBLE_COMPLETIONS_INDEX
+#   _TAB_ROWS
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+function disable_tab_completion() {
+  bind -r "\t" 2&> /dev/null
+  $_tab_restore
 }
-clean_tab_suggestions() {
+function clean_tab_suggestions() {
   tput dl $_TAB_ROWS
 }
-_tab_complete() {
+function _tab_complete() {
   [[ -n "$_TAB_CYCLE_MODE" ]] && \
     _tab_choice_exists $READLINE_LINE || \
       _tab_compile_possible_completions $READLINE_LINE
   _tab_list_possible_completions $READLINE_LINE
 }
-_tab_list_possible_completions() {
+function _tab_list_possible_completions() {
   _TAB_CYCLE_MODE=
   case ${#_TAB_POSSIBLE_COMPLETIONS[@]} in
     0) # Exit Cycle mode.
@@ -1306,12 +1322,12 @@ _tab_list_possible_completions() {
       ;;
   esac
 }
-_tab_print_suggestion() {
+function _tab_print_suggestion() {
   READLINE_LINE="${_TAB_POSSIBLE_COMPLETIONS[$_TAB_POSSIBLE_COMPLETIONS_INDEX]}"
   READLINE_POINT="${#READLINE_LINE}"
   _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((_TAB_POSSIBLE_COMPLETIONS_INDEX+1)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
 }
-_tab_list_completions() {
+function _tab_list_completions() {
   tput sc
   _tab_clear
   _TAB_ROWS=1
@@ -1345,11 +1361,11 @@ _tab_list_completions() {
   done
   tput rc
 }
-_tab_clear() {
+function _tab_clear() {
   tput cud1
   tput dl $_TAB_ROWS
 }
-_tab_compile_possible_completions() { # start string
+function _tab_compile_possible_completions() { # start string
   _TAB_POSSIBLE_COMPLETIONS=()
   local tab_option
   for tab_option in "${TAB_COMPLETIONS[@]}"; do
@@ -1359,7 +1375,7 @@ _tab_compile_possible_completions() { # start string
   done
   _TAB_POSSIBLE_COMPLETIONS_INDEX=0
 }
-_tab_choice_exists() { # choice
+function _tab_choice_exists() { # choice
   local tab_option
   for tab_option in "${TAB_COMPLETIONS[@]}"; do
     [[ "$tab_option" == "$1" ]] && return $EX_OK
