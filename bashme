@@ -1252,6 +1252,8 @@ function extract () {
 
 
 declare -a TAB_COMPLETIONS=()
+declare TAB_HIGHLIGHT="${REVERSE}"
+declare TAB_NORMAL="${FG_LGRAY}"
 declare -a _TAB_POSSIBLE_COMPLETIONS=()
 declare _TAB_CYCLE_MODE=
 declare -i _TAB_POSSIBLE_COMPLETIONS_INDEX=0
@@ -1260,11 +1262,7 @@ declare _tab_restore
 ##
 # Enables custom tab completion for the read builtin.
 # Globals:
-#   TAB_COMPLETIONS
-#   _TAB_POSSIBLE_COMPLETIONS
-#   _TAB_CYCLE_MODE
-#   _TAB_POSSIBLE_COMPLETIONS_INDEX
-#   _TAB_ROWS
+#   _tab_restore
 # Arguments:
 #   None
 # Returns:
@@ -1273,16 +1271,12 @@ declare _tab_restore
 function enable_tab_completion() {
   _tab_restore=$(set +o | grep emacs)
   set -o emacs
-  bind -x '"\t":"_tab_complete"'
+  bind -x '"\t":"tab_complete"'
 }
 ##
 # Disables custom tab completion for the read builtin.
 # Globals:
-#   TAB_COMPLETIONS
-#   _TAB_POSSIBLE_COMPLETIONS
-#   _TAB_CYCLE_MODE
-#   _TAB_POSSIBLE_COMPLETIONS_INDEX
-#   _TAB_ROWS
+#   _tab_restore
 # Arguments:
 #   None
 # Returns:
@@ -1292,93 +1286,136 @@ function disable_tab_completion() {
   bind -r "\t" 2&> /dev/null
   $_tab_restore
 }
+##
+# Cleans suggestion area after read command.
+# Globals:
+#   _TAB_ROWS
+# Arguments:
+#   None
+# Returns:
+#   None
+#
 function clean_tab_suggestions() {
   tput dl $_TAB_ROWS
 }
-function _tab_complete() {
+##
+# Handles tab-event within read command.
+# Globals:
+#   TAB_HIGHLIGHT
+#   TAB_NORMAL
+#   _TAB_CYCLE_MODE
+#   READLINE_LINE
+#   READLINE_POINT
+#   TAB_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS_INDEX
+#   _TAB_ROWS
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+function tab_complete() {
+  function _tab_choice_exists() { # choice
+    local tab_option
+    for tab_option in "${TAB_COMPLETIONS[@]}"; do
+      [[ "$tab_option" == "$1" ]] && return $EX_OK
+    done
+    return $EX_ERR
+  }
+  function _tab_compile_possible_completions() { # start string
+    _TAB_POSSIBLE_COMPLETIONS=()
+    local tab_option
+    for tab_option in "${TAB_COMPLETIONS[@]}"; do
+      if [[ $tab_option =~ ^$1.*$ ]]; then
+        _TAB_POSSIBLE_COMPLETIONS+=("$tab_option")
+      fi
+    done
+    _TAB_POSSIBLE_COMPLETIONS_INDEX=0
+  }
+  function _tab_list_possible_completions() {
+    function _tab_clear() {
+      tput cud1
+      tput dl $_TAB_ROWS
+    }
+    function _tab_select_suggestion() {
+      READLINE_LINE="${_TAB_POSSIBLE_COMPLETIONS[$_TAB_POSSIBLE_COMPLETIONS_INDEX]}"
+      READLINE_POINT="${#READLINE_LINE}"
+      _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((_TAB_POSSIBLE_COMPLETIONS_INDEX+1)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
+    }
+    function _tab_list_completions() {
+      tput sc
+      _tab_clear
+      _TAB_ROWS=1
+      local -i highlight=$1
+      local -i maxwidth=$(tput cols)
+      local -i width=0
+      local first=1
+      local -i index
+      local completion
+      for ((index=0;index<${#_TAB_POSSIBLE_COMPLETIONS[@]};index++)); do
+        completion="${_TAB_POSSIBLE_COMPLETIONS[$index]}"
+        width=$((width+1+${#completion}))
+        if [[ -n "$first" ]]; then
+          first=
+          tab_prefix
+        else
+          printf '%s' ' '
+        fi
+        if ((width >= maxwidth)); then
+          tput cud1
+          tab_prefix
+          ((_TAB_ROWS++))
+          local _prefix=$(tab_prefix)
+          width=$((${#_prefix}+${#completion}))
+        fi
+        if ((highlight==index)); then
+          printf '%s' "${TAB_HIGHLIGHT}$completion${RESET}"
+        else
+          printf '%s' "$completion"
+        fi
+      done
+      tput rc
+    }
+    _TAB_CYCLE_MODE=
+    case ${#_TAB_POSSIBLE_COMPLETIONS[@]} in
+      0) # Exit Cycle mode.
+        tput sc
+        _tab_clear
+        tput rc
+        ;;
+      1) # Clear remaining printed list. Select item. Exit Cycle mode.
+        tput sc
+        _tab_clear
+        tput rc
+        _tab_select_suggestion
+        ;;
+      *) # Print list. Select item. Enter Cycle mode.
+        _tab_list_completions $_TAB_POSSIBLE_COMPLETIONS_INDEX
+        _tab_select_suggestion
+        _TAB_CYCLE_MODE=1
+        ;;
+    esac
+  }
   [[ -n "$_TAB_CYCLE_MODE" ]] && \
     _tab_choice_exists $READLINE_LINE || \
       _tab_compile_possible_completions $READLINE_LINE
   _tab_list_possible_completions $READLINE_LINE
 }
-function _tab_list_possible_completions() {
-  _TAB_CYCLE_MODE=
-  case ${#_TAB_POSSIBLE_COMPLETIONS[@]} in
-    0) # Exit Cycle mode.
-      tput sc
-      _tab_clear
-      tput rc
-      ;;
-    1) # Clear remaining printed list. Select item. Exit Cycle mode.
-      tput sc
-      _tab_clear
-      tput rc
-      _tab_print_suggestion
-      ;;
-    *) # Print list. Select item. Enter Cycle mode.
-      _tab_list_completions $_TAB_POSSIBLE_COMPLETIONS_INDEX
-      _tab_print_suggestion
-      _TAB_CYCLE_MODE=1
-      ;;
-  esac
-}
-function _tab_print_suggestion() {
-  READLINE_LINE="${_TAB_POSSIBLE_COMPLETIONS[$_TAB_POSSIBLE_COMPLETIONS_INDEX]}"
-  READLINE_POINT="${#READLINE_LINE}"
-  _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((_TAB_POSSIBLE_COMPLETIONS_INDEX+1)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
-}
-function _tab_list_completions() {
-  tput sc
-  _tab_clear
-  _TAB_ROWS=1
-  local -i highlight=-1
-  [[ -n "$1" ]] && highlight=$1
-  local -i maxwidth=$(tput cols)
-  local -i width=0
-  local first=1
-  local -i index
-  local completion
-  for ((index=0;index<${#_TAB_POSSIBLE_COMPLETIONS[@]};index++)); do
-    completion="${_TAB_POSSIBLE_COMPLETIONS[$index]}"
-    width=$((width+1+${#completion}))
-    if [[ -n "$first" ]]; then
-      first=
-    else
-      printf '%s' ' '
-    fi
-    if ((width >= maxwidth)); then
-      tput cud1
-      ((_TAB_ROWS++))
-      width=$((_OFFSET+${#completion}))
-    fi
-    if ((highlight==index)); then
-      tput rev
-      printf '%s' "$completion"
-      tput sgr0
-    else
-      printf '%s' "$completion"
-    fi
-  done
-  tput rc
-}
-function _tab_clear() {
-  tput cud1
-  tput dl $_TAB_ROWS
-}
-function _tab_compile_possible_completions() { # start string
-  _TAB_POSSIBLE_COMPLETIONS=()
-  local tab_option
-  for tab_option in "${TAB_COMPLETIONS[@]}"; do
-    if [[ $tab_option =~ ^$1.*$ ]]; then
-      _TAB_POSSIBLE_COMPLETIONS+=("$tab_option")
-    fi
-  done
-  _TAB_POSSIBLE_COMPLETIONS_INDEX=0
-}
-function _tab_choice_exists() { # choice
-  local tab_option
-  for tab_option in "${TAB_COMPLETIONS[@]}"; do
-    [[ "$tab_option" == "$1" ]] && return $EX_OK
-  done
-  return $EX_ERR
-}
+##
+# Gets called right before printing suggestions(including after newlines).
+# Can be used to insert code to format the list
+# Globals:
+#   _TAB_CYCLE_MODE
+#   READLINE_LINE
+#   READLINE_POINT
+#   TAB_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS
+#   _TAB_POSSIBLE_COMPLETIONS_INDEX
+#   _TAB_ROWS
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+function tab_prefix() { return; }

@@ -342,3 +342,16 @@ read -ep "> " answer
 clean_tab_suggestions
 disable_tab_completion
 ```
+
+One can insert strings before the suggestion list by changing `tab_prefix`:
+
+```bash
+function tab_prefix() {
+  tput hpa 2 # Moves cursor to the 2nd column.
+}
+```
+
+Further options to modify the tab completion:
+
+* **TAB_HIGHLIGHT**: The format of the currently selected available completion. Default: `${REVERSE}`
+* **TAB_NORMAL**: The format of the remaining available completions. Default: `${FG_LGRAY}`
