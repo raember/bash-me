@@ -1271,7 +1271,8 @@ declare _tab_restore
 function enable_tab_completion() {
   _tab_restore=$(set +o | grep emacs)
   set -o emacs
-  bind -x '"\t":"tab_complete"'
+  bind -x '"\t":"tab_complete 1"'
+  bind -x '"\e[Z":"tab_complete -1"'
 }
 ##
 # Disables custom tab completion for the read builtin.
@@ -1284,6 +1285,7 @@ function enable_tab_completion() {
 #
 function disable_tab_completion() {
   bind -r "\t" 2&> /dev/null
+  bind -r "\e[Z" 2&> /dev/null
   $_tab_restore
 }
 ##
@@ -1316,6 +1318,7 @@ function clean_tab_suggestions() {
 #   None
 #
 function tab_complete() {
+  local offset=$1
   function _tab_choice_exists() { # choice
     local tab_option
     for tab_option in "${TAB_COMPLETIONS[@]}"; do
@@ -1331,20 +1334,18 @@ function tab_complete() {
         _TAB_POSSIBLE_COMPLETIONS+=("$tab_option")
       fi
     done
-    _TAB_POSSIBLE_COMPLETIONS_INDEX=0
+    _TAB_POSSIBLE_COMPLETIONS_INDEX=-1
   }
   function _tab_list_possible_completions() {
     function _tab_clear() {
-      tput cud1
+      echo
       tput dl $_TAB_ROWS
     }
     function _tab_select_suggestion() {
       READLINE_LINE="${_TAB_POSSIBLE_COMPLETIONS[$_TAB_POSSIBLE_COMPLETIONS_INDEX]}"
       READLINE_POINT="${#READLINE_LINE}"
-      _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((_TAB_POSSIBLE_COMPLETIONS_INDEX+1)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
     }
     function _tab_list_completions() {
-      tput sc
       _tab_clear
       _TAB_ROWS=1
       local -i highlight=$1
@@ -1363,7 +1364,7 @@ function tab_complete() {
           printf '%s' ' '
         fi
         if ((width >= maxwidth)); then
-          tput cud1
+          echo
           tab_prefix
           ((_TAB_ROWS++))
           local _prefix=$(tab_prefix)
@@ -1375,22 +1376,21 @@ function tab_complete() {
           printf '%s' "$completion"
         fi
       done
-      tput rc
+      tput cuu $_TAB_ROWS
     }
     _TAB_CYCLE_MODE=
     case ${#_TAB_POSSIBLE_COMPLETIONS[@]} in
       0) # Exit Cycle mode.
-        tput sc
         _tab_clear
-        tput rc
+        tput cuu1
         ;;
       1) # Clear remaining printed list. Select item. Exit Cycle mode.
-        tput sc
         _tab_clear
-        tput rc
+        tput cuu1
         _tab_select_suggestion
         ;;
       *) # Print list. Select item. Enter Cycle mode.
+        _TAB_POSSIBLE_COMPLETIONS_INDEX=$(((${#_TAB_POSSIBLE_COMPLETIONS[@]}+_TAB_POSSIBLE_COMPLETIONS_INDEX+offset)%${#_TAB_POSSIBLE_COMPLETIONS[@]}))
         _tab_list_completions $_TAB_POSSIBLE_COMPLETIONS_INDEX
         _tab_select_suggestion
         _TAB_CYCLE_MODE=1
